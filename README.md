@@ -1,0 +1,1 @@
+# Monad Farcaster MiniApp Template
