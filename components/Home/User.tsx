@@ -5,7 +5,7 @@ export function User() {
 
   return (
     <div className="space-y-4 border border-[#333] rounded-md p-4">
-      <h2 className="text-xl font-bold text-left">sdk.context</h2>
+      <h2 className="text-xl font-bold text-left">User info</h2>
       <div className="flex flex-row space-x-4 justify-start items-start">
         {context?.user ? (
           <>
@@ -20,19 +20,19 @@ export function User() {
             )}
             <div className="flex flex-col justify-start items-start space-y-2">
               <p className="text-sm text-left">
-                user.displayName:{" "}
+                Your name:{" "}
                 <span className="bg-white font-mono text-black rounded-md p-[4px]">
                   {context?.user?.displayName}
                 </span>
               </p>
               <p className="text-sm text-left">
-                user.username:{" "}
+                Your username:{" "}
                 <span className="bg-white font-mono text-black rounded-md p-[4px]">
                   {context?.user?.username}
                 </span>
               </p>
               <p className="text-sm text-left">
-                user.fid:{" "}
+                Your fid:{" "}
                 <span className="bg-white font-mono text-black rounded-md p-[4px]">
                   {context?.user?.fid}
                 </span>

@@ -5,22 +5,28 @@ export async function GET() {
   const farcasterConfig = {
     accountAssociation: {
       header:
-        "eyJmaWQiOjE3OTc5LCJ0eXBlIjoiY3VzdG9keSIsImtleSI6IjB4MGMxNWE5QkVmRTg3RjY0N0IwMDNhMjI0MTY4NDYwMzYyODQ0M2Y4YiJ9",
+        "eyJmaWQiOjg4ODIzNCwidHlwZSI6ImN1c3RvZHkiLCJrZXkiOiIweEM4MTM3MDM5QkNCYzQ0OUQ2NDJFRDA4ZDFmNEI0MDJCNTc2QTY1MjUifQ",
       payload:
-        "eyJkb21haW4iOiJtb25hZC1taW5pYXBwLXRlbXBsYXRlLXNldmVuLnZlcmNlbC5hcHAifQ",
+        "eyJkb21haW4iOiJtb24tZmFyLWFwcC52ZXJjZWwuYXBwIn0",
       signature:
-        "MHgwYzY2NDdjZDhjOWJiY2JmYzg2NGIzZjVjYWVjY2ExMTdlOTY4ZGQwMWIzMmM0NGViMjU5ZDhlOGQyMzdhZTZiMDU1MmNmNWRiMDU1MDMwNTZmNTNhZmEwZDZlZTBlZmIyMmJmNDNmMDQ4NTdhMzk2NmY0YmMzODk2N2NlZDI5ZjFi",
+        "MHg3ZDdhNjk1MDNjN2NkMzE3NzZmMjRhOGM4ZjYyMzQ1MTAwMGRjNGQzZTQzY2Y4NjBlNzI5MWUyMzRjOWM0NDU2NTM1ZjJhNzdjYmY0NjZhYzFlZWVjYjdiODNmNjkyOWYxYTFlNDI5ZTQ3ZTUxYzA5ZGE0NTljZjEyNTBkNTMwNzFj",
     },
     frame: {
       version: "1",
-      name: "Monad Farcaster MiniApp Template",
+      name: "Monad Farcaster Happy Vote",
       iconUrl: `${APP_URL}/images/icon.png`,
       homeUrl: `${APP_URL}`,
       imageUrl: `${APP_URL}/images/feed.png`,
       screenshotUrls: [],
-      tags: ["monad", "farcaster", "miniapp", "template"],
-      primaryCategory: "developer-tools",
-      buttonTitle: "Launch Template",
+      tags: [
+        "farcaster",
+        "miniapp",
+        "vote",
+        "mood",
+        "monad",
+      ],
+      primaryCategory: "social",
+      buttonTitle: "Vote Now",
       splashImageUrl: `${APP_URL}/images/splash.png`,
       splashBackgroundColor: "#ffffff",
       webhookUrl: `${APP_URL}/api/webhook`,

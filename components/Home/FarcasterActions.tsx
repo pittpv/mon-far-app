@@ -6,50 +6,50 @@ export function FarcasterActions() {
 
   return (
     <div className="space-y-4 border border-[#333] rounded-md p-4">
-      <h2 className="text-xl font-bold text-left">sdk.actions</h2>
+      <h2 className="text-xl font-bold text-left">Farcaster actions</h2>
       <div className="flex flex-row space-x-4 justify-start items-start">
         {actions ? (
           <div className="flex flex-col space-y-4 justify-start">
             <button
               className="bg-white text-black rounded-md p-2 text-sm"
-              onClick={() => actions?.addFrame()}
-            >
-              addFrame
-            </button>
-            <button
-              className="bg-white text-black rounded-md p-2 text-sm"
-              onClick={() => actions?.close()}
-            >
-              close
-            </button>
-            <button
-              className="bg-white text-black rounded-md p-2 text-sm"
               onClick={() =>
                 actions?.composeCast({
-                  text: "Check out this Monad Farcaster MiniApp Template!",
+                  text: "Check out this Monad Farcaster Happy Vote MiniApp",
                   embeds: [`${APP_URL}`],
                 })
               }
             >
-              composeCast
+              Share about Happy World Vote MiniApp
             </button>
             <button
               className="bg-white text-black rounded-md p-2 text-sm"
-              onClick={() => actions?.openUrl("https://docs.monad.xyz")}
+              onClick={() => actions?.viewProfile({ fid: 888234 })}
             >
-              openUrl
+              View Author Profile
+            </button>
+            <button
+              className="bg-white text-black rounded-md p-2 text-sm"
+              onClick={() => actions?.addFrame()}
+            >
+              Add this MiniApp
+            </button>
+            <button
+              className="bg-white text-black rounded-md p-2 text-sm"
+              onClick={() => actions?.openUrl("https://github.com/pittpv/mon-far-app/tree/main")}
+            >
+              About app and Repo
+            </button>
+            <button
+              className="bg-white text-black rounded-md p-2 text-sm"
+              onClick={() => actions?.openUrl("https://testnet.monad.xyz/z")}
+            >
+              Open Monad Testnet
             </button>
             <button
               className="bg-white text-black rounded-md p-2 text-sm"
               onClick={() => actions?.signIn({ nonce: "1201" })}
             >
-              signIn
-            </button>
-            <button
-              className="bg-white text-black rounded-md p-2 text-sm"
-              onClick={() => actions?.viewProfile({ fid: 17979 })}
-            >
-              viewProfile
+              Sign in with Farcaster
             </button>
           </div>
         ) : (
