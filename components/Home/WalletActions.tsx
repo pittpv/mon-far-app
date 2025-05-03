@@ -83,7 +83,7 @@ export function WalletActions() {
 
   return (
     <div className="space-y-4 border border-[#333] rounded-md p-4">
-      <h2 className="text-xl font-bold text-left">Wallet control</h2>
+      <h2 className="text-xl font-bold text-left">Wallet control and Voting</h2>
 
       <div className="flex flex-row space-x-4 justify-start items-start">
         {isConnected ? (
