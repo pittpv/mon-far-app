@@ -9,6 +9,7 @@ A lightweight miniapp for **Farcaster** that lets users vote on how they feel â€
 - Users can only vote once per 24 hours (on-chain enforcement)
 - Built with **Wagmi** + **Viem** + **React** + **Next.js**
 - Smart contract deployable via **Remix**
+- Donate for author
 
 ## ðŸ§± Smart Contract
 
