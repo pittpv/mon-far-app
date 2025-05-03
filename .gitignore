@@ -38,8 +38,8 @@ next-env.d.ts
 .env
 .vercel
 package — copy.json
-WalletActions — copy2.tsx
-WalletActions — copy.tsx
-VoteButtons — copy.tsx
-VoteButtons.tsx
-layout — copy.tsx
+/components/Home/WalletActions — copy2.tsx
+/components/Home/WalletActions — copy.tsx
+/components/Home/VoteButtons — copy.tsx
+/components/Home/VoteButtons.tsx
+/app/layout — copy.tsx
