@@ -10,8 +10,10 @@ import {
   useSwitchChain,
   useReadContract,
   useWriteContract,
+  useConnect,
 } from "wagmi";
 import { useEffect, useState } from "react";
+import { FaWallet, FaQrcode } from "react-icons/fa";
 import { CONTRACT_ADDRESS, CONTRACT_ABI } from "@/lib/contract";
 
 export function WalletActions() {
@@ -21,6 +23,7 @@ export function WalletActions() {
   const { data: hash, sendTransaction } = useSendTransaction();
   const { switchChain } = useSwitchChain();
   const { writeContract, isPending } = useWriteContract();
+  const { connect, connectors, status: connectStatus, error: connectError } = useConnect();
   const [timeLeft, setTimeLeft] = useState(0);
 
   const { data: votes } = useReadContract({
@@ -72,8 +75,28 @@ export function WalletActions() {
   if (status === "connecting" || status === "reconnecting") {
     return <p>Connecting wallet…</p>;
   }
+
   if (!isConnected) {
-    return <p>Please connect your wallet</p>;
+    return (
+      <div className="grid gap-4 p-4">
+        {connectors.map((connector) => (
+          <button
+            key={connector.id}
+            onClick={() => connect({ connector })}
+            className="flex items-center p-4 bg-white rounded-lg shadow hover:bg-gray-100 transition"
+          >
+            {connector.name === 'WalletConnect' ? (
+              <FaQrcode className="mr-2 text-blue-500" />
+            ) : (
+              <FaWallet className="mr-2 text-yellow-500" />
+            )}
+            <span className="text-gray-800 font-medium">
+              Connect with {connector.name}
+            </span>
+          </button>
+        ))}
+      </div>
+    );
   }
 
   const [happyVotes, sadVotes] = votes || [0n, 0n];
@@ -86,160 +109,157 @@ export function WalletActions() {
       <h2 className="text-xl font-bold text-left">Wallet control and Voting</h2>
 
       <div className="flex flex-row space-x-4 justify-start items-start">
-        {isConnected ? (
-          <div className="flex flex-col space-y-4 justify-start">
-            <p className="text-sm text-left">
-              Connected to wallet:{" "}
-              <span className="bg-white font-mono text-black rounded-md p-[4px]">{address}</span>
-            </p>
-            <p className="text-sm text-left">
-              Chain Id:{" "}
-              <span className="bg-white font-mono text-black rounded-md p-[4px]">{chainId}</span>
-            </p>
+        <div className="flex flex-col space-y-4 justify-start">
+          <p className="text-sm text-left">
+            Connected to wallet:{" "}
+            <span className="bg-white font-mono text-black rounded-md p-[4px]">{address}</span>
+          </p>
+          <p className="text-sm text-left">
+            Chain Id:{" "}
+            <span className="bg-white font-mono text-black rounded-md p-[4px]">{chainId}</span>
+          </p>
 
-            {chainId === monadTestnet.id ? (
-              <>
-                <div
-                  className="space-y-4"
-                  style={{
-                    fontFamily: "Arial, sans-serif",
-                    maxWidth: "400px",
-                    margin: "0 auto",
-                    textAlign: "center",
-                    padding: "20px",
-                  }}
-                >
-                  <h2 className="text-xl text-center" style={{ color: "#4a4a4a", marginBottom: "20px" }}>Make transactions by voting</h2>
+          {chainId === monadTestnet.id ? (
+            <>
+              <div
+                className="space-y-4"
+                style={{
+                  fontFamily: "Arial, sans-serif",
+                  maxWidth: "400px",
+                  margin: "0 auto",
+                  textAlign: "center",
+                  padding: "20px",
+                }}
+              >
+                <h2 className="text-xl text-center" style={{ color: "#4a4a4a", marginBottom: "20px" }}>
+                  Make transactions by voting
+                </h2>
 
-                  <div className="flex justify-center gap-4" style={{ margin: "30px 0" }}>
-                    <button
-                      onClick={() => handleVote(true)}
-                      disabled={!canVote || isPending}
-                      style={{
-                        padding: "10px 20px",
-                        backgroundColor: "#4CAF50",
-                        color: "white",
-                        border: "none",
-                        borderRadius: "5px",
-                        cursor: "pointer",
-                        fontSize: "16px",
-                        opacity: !canVote || isPending ? 0.6 : 1,
-                      }}
-                    >
-                      😊 I&apos;m Happy
-                    </button>
-                    <button
-                      onClick={() => handleVote(false)}
-                      disabled={!canVote || isPending}
-                      style={{
-                        padding: "10px 20px",
-                        backgroundColor: "#f44336",
-                        color: "white",
-                        border: "none",
-                        borderRadius: "5px",
-                        cursor: "pointer",
-                        fontSize: "16px",
-                        opacity: !canVote || isPending ? 0.6 : 1,
-                      }}
-                    >
-                      😢 I&apos;m Sad
-                    </button>
-                  </div>
-
-                  {!canVote && (
-                    <p style={{ color: "red", margin: "15px 0" }}>
-                      You&apos;ve already voted. Next in:{" "}
-                      {new Date(timeLeft * 1000).toISOString().substr(11, 8)}
-                    </p>
-                  )}
-
-                  <div
+                <div className="flex justify-center gap-4" style={{ margin: "30px 0" }}>
+                  <button
+                    onClick={() => handleVote(true)}
+                    disabled={!canVote || isPending}
                     style={{
-                      marginTop: "30px",
-                      backgroundColor: "#f5f5f5",
-                      padding: "15px",
-                      borderRadius: "8px",
+                      padding: "10px 20px",
+                      backgroundColor: "#4CAF50",
+                      color: "white",
+                      border: "none",
+                      borderRadius: "5px",
+                      cursor: "pointer",
+                      fontSize: "16px",
+                      opacity: !canVote || isPending ? 0.6 : 1,
                     }}
                   >
-                    <h3 style={{ color: "#4a4a4a", marginBottom: "15px" }}>Happiness Meter</h3>
-
-                    <div style={{ display: "flex", height: "30px", marginBottom: "15px" }}>
-                      <div
-                        style={{
-                          width: `${happyPct}%`,
-                          backgroundColor: "#4CAF50",
-                          display: "flex",
-                          justifyContent: "center",
-                          alignItems: "center",
-                          color: "white",
-                        }}
-                      >
-                        {happyPct}%
-                      </div>
-                      <div
-                        style={{
-                          width: `${sadPct}%`,
-                          backgroundColor: "#f44336",
-                          display: "flex",
-                          justifyContent: "center",
-                          alignItems: "center",
-                          color: "white",
-                        }}
-                      >
-                        {sadPct}%
-                      </div>
-                    </div>
-
-                    <div style={{ color: "#666" }}>
-                      <p>😊 Happy: {happyPct}%</p>
-                      <p>😢 Sad: {sadPct}%</p>
-                      <p>🧮 Total votes: {total.toString()}</p>
-                    </div>
-                  </div>
+                    😊 I&apos;m Happy
+                  </button>
+                  <button
+                    onClick={() => handleVote(false)}
+                    disabled={!canVote || isPending}
+                    style={{
+                      padding: "10px 20px",
+                      backgroundColor: "#f44336",
+                      color: "white",
+                      border: "none",
+                      borderRadius: "5px",
+                      cursor: "pointer",
+                      fontSize: "16px",
+                      opacity: !canVote || isPending ? 0.6 : 1,
+                    }}
+                  >
+                    😢 I&apos;m Sad
+                  </button>
                 </div>
 
-                <button
-                  className="bg-white text-black rounded-md p-2 text-sm"
-                  onClick={sendTransactionHandler}
-                >
-                  ❤️ Donate MON
-                </button>
-
-                {hash && (
-                  <button
-                    className="bg-white text-black rounded-md p-2 text-sm"
-                    onClick={() =>
-                      window.open(
-                        `https://testnet.monadexplorer.com/tx/${hash}`,
-                        "_blank"
-                      )
-                    }
-                  >
-                    View Transaction
-                  </button>
+                {!canVote && (
+                  <p style={{ color: "red", margin: "15px 0" }}>
+                    You&apos;ve already voted. Next in:{" "}
+                    {new Date(timeLeft * 1000).toISOString().substr(11, 8)}
+                  </p>
                 )}
-              </>
-            ) : (
+
+                <div
+                  style={{
+                    marginTop: "30px",
+                    backgroundColor: "#f5f5f5",
+                    padding: "15px",
+                    borderRadius: "8px",
+                  }}
+                >
+                  <h3 style={{ color: "#4a4a4a", marginBottom: "15px" }}>Happiness Meter</h3>
+
+                  <div style={{ display: "flex", height: "30px", marginBottom: "15px" }}>
+                    <div
+                      style={{
+                        width: `${happyPct}%`,
+                        backgroundColor: "#4CAF50",
+                        display: "flex",
+                        justifyContent: "center",
+                        alignItems: "center",
+                        color: "white",
+                      }}
+                    >
+                      {happyPct}%
+                    </div>
+                    <div
+                      style={{
+                        width: `${sadPct}%`,
+                        backgroundColor: "#f44336",
+                        display: "flex",
+                        justifyContent: "center",
+                        alignItems: "center",
+                        color: "white",
+                      }}
+                    >
+                      {sadPct}%
+                    </div>
+                  </div>
+
+                  <div style={{ color: "#666" }}>
+                    <p>😊 Happy: {happyPct}%</p>
+                    <p>😢 Sad: {sadPct}%</p>
+                    <p>🧮 Total votes: {total.toString()}</p>
+                  </div>
+                </div>
+              </div>
+
               <button
                 className="bg-white text-black rounded-md p-2 text-sm"
-                onClick={() => switchChain({ chainId: monadTestnet.id })}
+                onClick={sendTransactionHandler}
               >
-                Switch to Monad Testnet
+                ❤️ Donate MON
               </button>
-            )}
 
+              {hash && (
+                <button
+                  className="bg-white text-black rounded-md p-2 text-sm"
+                  onClick={() =>
+                    window.open(
+                      `https://testnet.monadexplorer.com/tx/${hash}`,
+                      "_blank"
+                    )
+                  }
+                >
+                  View Transaction
+                </button>
+              )}
+            </>
+          ) : (
             <button
               className="bg-white text-black rounded-md p-2 text-sm"
-              onClick={() => disconnect()}
+              onClick={() => switchChain({ chainId: monadTestnet.id })}
             >
-              Disconnect Wallet
+              Switch to Monad Testnet
             </button>
-          </div>
-        ) : (
-          !isEthProviderAvailable && (
-            <p className="text-sm text-left">Wallet connection only via Warpcast</p>
-          )
-        )}
+          )}
+
+          <button
+            className="bg-white text-black rounded-md p-2 text-sm"
+            onClick={() => disconnect()}
+          >
+            Disconnect Wallet
+          </button>
+          <p className="text-sm text-center">Click Disconnect to use WalletConnect</p>
+        </div>
       </div>
     </div>
   );
