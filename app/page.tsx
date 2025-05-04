@@ -12,7 +12,7 @@ const frame = {
       name: "MiniApp for Monad Farcaster",
       url: APP_URL,
       splashImageUrl: `${APP_URL}/images/splash.png`,
-      splashBackgroundColor: "#f7f7f7",
+      splashBackgroundColor: "#005480",
     },
   },
 };
