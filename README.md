@@ -11,6 +11,10 @@ A lightweight miniapp for **Farcaster** that lets users vote on how they feel �
 - Smart contract deployable via **Remix**
 - Donate for author
 
+## 🆕 Updates
+
+- WalletConnect
+
 ## 🧱 Smart Contract
 
 Deploy `contracts/HappyVote.sol` via [Remix](https://remix.ethereum.org).
