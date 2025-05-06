@@ -5,57 +5,58 @@ export function FarcasterActions() {
   const { actions } = useMiniAppContext();
 
   return (
-    <div className="space-y-4 border border-[#333] rounded-md p-4">
-      <h2 className="text-xl font-bold text-left">Farcaster actions</h2>
-      <div className="flex flex-row space-x-4 justify-start items-start">
-        {actions ? (
-          <div className="flex flex-col space-y-4 justify-start">
-            <button
-              className="bg-white text-black rounded-md p-2 text-sm"
-              onClick={() =>
-                actions?.composeCast({
-                  text: "Check out this Monad Farcaster Happy Vote MiniApp",
-                  embeds: [`${APP_URL}`],
-                })
-              }
-            >
-              Share about Happy World Vote MiniApp
-            </button>
-            <button
-              className="bg-white text-black rounded-md p-2 text-sm"
-              onClick={() => actions?.viewProfile({ fid: 888234 })}
-            >
-              View Author Profile
-            </button>
-            <button
-              className="bg-white text-black rounded-md p-2 text-sm"
-              onClick={() => actions?.addFrame()}
-            >
-              Add this MiniApp
-            </button>
-            <button
-              className="bg-white text-black rounded-md p-2 text-sm"
-              onClick={() => actions?.openUrl("https://github.com/pittpv/mon-far-app/tree/main")}
-            >
-              About app and Repo
-            </button>
-            <button
-              className="bg-white text-black rounded-md p-2 text-sm"
-              onClick={() => actions?.openUrl("https://testnet.monad.xyz/z")}
-            >
-              Open Monad Testnet
-            </button>
-            <button
-              className="bg-white text-black rounded-md p-2 text-sm"
-              onClick={() => actions?.signIn({ nonce: "1201" })}
-            >
-              Sign in with Farcaster
-            </button>
-          </div>
-        ) : (
-          <p className="text-sm text-left">Actions not available</p>
-        )}
-      </div>
+    <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-md w-full">
+      <h2 className="text-2xl font-semibold text-gray-800 mb-4">Farcaster Actions</h2>
+      {actions ? (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          <ActionButton onClick={() =>
+            actions.composeCast({
+              text: "Check out this Monad Farcaster Happy Vote MiniApp",
+              embeds: [`${APP_URL}`],
+            })
+          }>
+            📣 Share MiniApp
+          </ActionButton>
+          <ActionButton onClick={() => actions.viewProfile({ fid: 888234 })}>
+            👤 View Author
+          </ActionButton>
+          <ActionButton onClick={() => actions.addFrame()}>
+            ➕ Add MiniApp
+          </ActionButton>
+          <ActionButton onClick={() =>
+            actions.openUrl("https://github.com/pittpv/mon-far-app/tree/main")
+          }>
+            📁 View GitHub Repo
+          </ActionButton>
+          <ActionButton onClick={() =>
+            actions.openUrl("https://testnet.monad.xyz/z")
+          }>
+            🧪 Open Monad Testnet
+          </ActionButton>
+          <ActionButton onClick={() => actions.signIn({ nonce: "1201" })}>
+            🔐 Sign in with Farcaster
+          </ActionButton>
+        </div>
+      ) : (
+        <p className="text-gray-500 text-sm">Actions not available</p>
+      )}
     </div>
+  );
+}
+
+function ActionButton({
+                        children,
+                        onClick,
+                      }: {
+  children: React.ReactNode;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      className="w-full px-4 py-3 rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-800 font-medium text-sm sm:text-base transition"
+    >
+      {children}
+    </button>
   );
 }

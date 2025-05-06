@@ -37,10 +37,7 @@ next-env.d.ts
 
 .env
 .vercel
-package — copy.json
-/components/Home/WalletActions — copy2.tsx
-/components/Home/WalletActions — copy.tsx
-/components/Home/VoteButtons — copy.tsx
-/components/Home/VoteButtons.tsx
-/app/layout — copy.tsx
-/components/frame-wallet-provider — copy.tsx
+components/Home/FarcasterActions — old dsgn.tsx
+components/Home/index — old dsgn.tsx
+components/Home/User — old dsgn.tsx
+components/Home/WalletActions — old dsgn.tsx
