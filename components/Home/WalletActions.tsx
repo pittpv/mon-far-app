@@ -183,6 +183,7 @@ export function WalletActions() {
         </button>
       )}
 
+      <br/>
       <button
         className="text-sm underline text-gray-600 mt-4"
         onClick={() => disconnect()}
