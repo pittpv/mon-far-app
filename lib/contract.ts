@@ -2,7 +2,7 @@
 import { Chain } from 'viem/chains'
 
 export const monadTestnet: Chain = {
-  id: 1001,
+  id: 10143,
   name: 'Monad Testnet',
   nativeCurrency: {
     name: 'Monad',
@@ -17,7 +17,7 @@ export const monadTestnet: Chain = {
   blockExplorers: {
     default: {
       name: 'MonadScan',
-      url: 'https://testnet-explorer.monad.xyz',
+      url: 'https://testnet.monadexplorer.com/',
     },
   },
   testnet: true, // Добавляем это вместо network
