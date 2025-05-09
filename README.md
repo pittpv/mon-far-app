@@ -15,6 +15,7 @@ A lightweight miniapp for **Farcaster** that lets users vote on how they feel â€
 
 - [04.05.2025] WalletConnect
 - [06.05.2025] Modern design, increased adaptability
+- [09.05.2025] Dark theme with toggle
 
 ## ðŸ§± Smart Contract
 
