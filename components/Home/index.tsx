@@ -7,16 +7,18 @@ import { motion } from "framer-motion";
 
 export default function Home() {
   return (
-    <div className="min-h-screen w-full bg-gradient-to-br from-[#fdfbfb] to-[#ebedee] flex flex-col items-center justify-center px-4 py-10">
+    <div className="min-h-screen w-full flex flex-col items-center justify-center px-4 py-10 transition-colors duration-300">
       <motion.h1
-        className="text-3xl sm:text-4xl md:text-5xl font-extrabold text-center text-gray-800 mb-8 leading-tight"
+        className="text-3xl sm:text-4xl md:text-5xl font-extrabold text-center text-black dark:text-white mb-8 leading-tight"
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6 }}
       >
         Make the World Happier
-        <br/>
-        <span className="w-full text-gray-800 font-medium text-sm">Cast Your Vote Now</span>
+        <br />
+        <span className="w-full text-gray-600 dark:text-gray-300 font-medium text-sm">
+          Cast Your Vote Now
+        </span>
       </motion.h1>
 
       <div className="w-full max-w-5xl space-y-6">

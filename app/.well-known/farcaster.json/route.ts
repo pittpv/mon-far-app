@@ -28,7 +28,7 @@ export async function GET() {
       primaryCategory: "social",
       buttonTitle: "Vote Now",
       splashImageUrl: `${APP_URL}/images/splash.png`,
-      splashBackgroundColor: "#ffffff",
+      splashBackgroundColor: "#facc9b",
       webhookUrl: `${APP_URL}/api/webhook`,
     },
   };

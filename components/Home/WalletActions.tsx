@@ -73,7 +73,7 @@ export function WalletActions() {
   }
 
   if (status === "connecting" || status === "reconnecting") {
-    return <p>Connecting wallet…</p>;
+    return <p className="text-gray-700 dark:text-gray-300">Connecting wallet…</p>;
   }
 
   if (!isConnected) {
@@ -83,7 +83,7 @@ export function WalletActions() {
           <button
             key={connector.id}
             onClick={() => connect({ connector })}
-            className="flex items-center justify-center gap-2 p-4 border rounded-xl shadow-md hover:bg-gray-50 transition text-base font-medium"
+            className="flex items-center justify-center gap-2 p-4 border rounded-xl shadow-md bg-white dark:bg-gray-800 text-black dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 transition"
           >
             {connector.name === 'WalletConnect' ? (
               <FaQrcode className="text-blue-500" />
@@ -103,21 +103,21 @@ export function WalletActions() {
   const sadPct = total > 0n ? 100 - happyPct : 0;
 
   return (
-    <div className="w-full rounded-2xl border border-gray-200 bg-white p-6 shadow-md">
-      <h2 className="text-2xl font-semibold text-gray-800 mb-4">Wallet Control & Voting</h2>
+    <div className="w-full rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-6 shadow-md text-black dark:text-white transition-colors duration-300">
+      <h2 className="text-2xl font-semibold mb-4">Wallet Control & Voting</h2>
 
       <div className="space-y-2 mb-4">
-        <p className="text-sm text-gray-700">
-          Connected to: <span className="bg-gray-100 px-2 py-1 rounded font-mono break-all">{address}</span>
+        <p className="text-sm text-gray-700 dark:text-gray-300">
+          Connected to: <span className="bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded font-mono break-all">{address}</span>
         </p>
-        <p className="text-sm text-gray-700">
-          Chain ID: <span className="bg-gray-100 px-2 py-1 rounded font-mono">{chainId}</span>
+        <p className="text-sm text-gray-700 dark:text-gray-300">
+          Chain ID: <span className="bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded font-mono">{chainId}</span>
         </p>
       </div>
 
       {chainId === monadTestnet.id ? (
         <>
-          <h3 className="text-lg font-semibold mb-2 text-gray-800">Vote your feelings</h3>
+          <h3 className="text-lg font-semibold mb-2">Vote your feelings</h3>
           <div className="flex flex-col sm:flex-row gap-4 mb-4">
             <button
               onClick={() => handleVote(true)}
@@ -141,8 +141,8 @@ export function WalletActions() {
             </p>
           )}
 
-          <div className="bg-gray-100 rounded-xl p-4 mb-4">
-            <h4 className="font-semibold mb-2 text-gray-700">Happiness Meter</h4>
+          <div className="bg-gray-100 dark:bg-gray-800 rounded-xl p-4 mb-4">
+            <h4 className="font-semibold mb-2 text-gray-700 dark:text-gray-300">Happiness Meter</h4>
             <div className="flex h-6 overflow-hidden rounded-xl text-sm font-medium text-white">
               <div className="bg-green-500 flex items-center justify-center" style={{ width: `${happyPct}%` }}>
                 {happyPct > 10 ? `${happyPct}%` : null}
@@ -151,7 +151,7 @@ export function WalletActions() {
                 {sadPct > 10 ? `${sadPct}%` : null}
               </div>
             </div>
-            <div className="mt-2 text-sm text-gray-600">
+            <div className="mt-2 text-sm text-gray-600 dark:text-gray-300">
               <p>😊 Happy: {happyPct}%</p>
               <p>😢 Sad: {sadPct}%</p>
               <p>🧮 Total votes: {total.toString()}</p>
@@ -167,7 +167,7 @@ export function WalletActions() {
 
           {hash && (
             <button
-              className="w-full sm:w-auto underline text-blue-600"
+              className="w-full sm:w-auto underline text-blue-600 dark:text-blue-400"
               onClick={() => window.open(`https://testnet.monadexplorer.com/tx/${hash}`, "_blank")}
             >
               View Transaction
@@ -185,12 +185,12 @@ export function WalletActions() {
 
       <br/>
       <button
-        className="text-sm underline text-gray-600 mt-4"
+        className="text-sm underline text-gray-600 dark:text-gray-400 mt-4"
         onClick={() => disconnect()}
       >
         Disconnect Wallet
       </button>
-      <p className="text-xs text-gray-400">Click Disconnect to use WalletConnect</p>
+      <p className="text-xs text-gray-400 dark:text-gray-500">Click Disconnect to use WalletConnect</p>
     </div>
   );
 }
