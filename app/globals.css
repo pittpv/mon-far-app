@@ -59,3 +59,14 @@ html.dark ::-webkit-scrollbar-thumb {
     text-wrap: balance;
   }
 }
+
+/* Modal Animation */
+@keyframes modalShow {
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+.animate-modalShow {
+  animation: modalShow 0.3s forwards;
+}

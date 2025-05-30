@@ -5,30 +5,29 @@ import { parseEther } from "viem";
 import { monadTestnet } from "viem/chains";
 import {
   useAccount,
-  // useDisconnect, // No longer needed here
+  useDisconnect,
   useSendTransaction,
   useSwitchChain,
   useReadContract,
   useWriteContract,
-  // useConnect, // No longer needed here
+  useConnect,
   useWaitForTransactionReceipt,
 } from "wagmi";
 import { useEffect, useState } from "react";
-// import { FaWallet, FaQrcode } from "react-icons/fa"; // No longer needed here
+import { FaWallet, FaQrcode } from "react-icons/fa";
 import { CONTRACT_ADDRESS, CONTRACT_ABI } from "@/lib/contract";
 
 export function WalletActions() {
   const { isEthProviderAvailable } = useMiniAppContext();
   const { address, isConnected, status, chainId } = useAccount();
-  // const { disconnect } = useDisconnect(); // No longer needed here
+  const { disconnect } = useDisconnect();
   const { data: hash, sendTransaction } = useSendTransaction();
   const { switchChain } = useSwitchChain();
   const { data: voteTxHash, writeContract, isPending: isWriteContractPending, reset: resetWriteContract } = useWriteContract();
-  // const { connect, connectors, status: connectStatus, error: connectError } = useConnect(); // No longer needed
+  const { connect, connectors, status: connectStatus, error: connectError } = useConnect();
   const [timeLeft, setTimeLeft] = useState(0);
   const [currentVoteTxHash, setCurrentVoteTxHash] = useState<`0x${string}` | undefined>();
 
-  // === All Hooks Called Unconditionally First ===
   const { data: votes, refetch: refetchVotes } = useReadContract({
     address: CONTRACT_ADDRESS,
     abi: CONTRACT_ABI,
@@ -80,21 +79,6 @@ export function WalletActions() {
     }
   }, [isConfirmed, refetchVotes, refetchCanVote, refetchTimeUntilNextVote, resetWriteContract]);
 
-  // === Conditional Rendering Logic (AFTER all hooks) ===
-  if (!isConnected && status !== 'connecting' && status !== 'reconnecting') {
-    return null;
-  }
-
-  if (status === "connecting" || status === "reconnecting") {
-    // Consider returning a more specific loading indicator for this panel if desired,
-    // or null if global loading indicators are sufficient.
-    // For now, returning a simple message or null.
-    // Returning null to avoid duplicate "Connecting" messages if FrameProvider handles it.
-    return null;
-    // return <p className="text-gray-700 dark:text-gray-300">Loading wallet information…</p>;
-  }
-
-  // Define handlers and UI logic only if we are going to render the main component
   const handleVote = (isHappy: boolean) => {
     writeContract({
       address: CONTRACT_ADDRESS,
@@ -113,6 +97,31 @@ export function WalletActions() {
       to: "0x1f1dd9c30181e8e49D5537Bc3E81c33896e778Bd",
       value: parseEther("0.5"),
     });
+  }
+
+  if (status === "connecting" || status === "reconnecting") {
+    return <p className="text-gray-700 dark:text-gray-300">Connecting wallet…</p>;
+  }
+
+  if (!isConnected) {
+    return (
+      <div className="grid gap-4 p-4">
+        {connectors.map((connector) => (
+          <button
+            key={connector.id}
+            onClick={() => connect({ connector })}
+            className="flex items-center justify-center gap-2 p-4 border rounded-xl shadow-md bg-white dark:bg-gray-800 text-black dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 transition"
+          >
+            {connector.name === 'WalletConnect' ? (
+              <FaQrcode className="text-blue-500" />
+            ) : (
+              <FaWallet className="text-yellow-500" />
+            )}
+            Connect with {connector.name}
+          </button>
+        ))}
+      </div>
+    );
   }
 
   const [happyVotes, sadVotes] = votes || [0n, 0n];
@@ -207,7 +216,14 @@ export function WalletActions() {
         </button>
       )}
 
-      {/* Removed Disconnect button and paragraph from here */}
+      <br/>
+      <button
+        className="text-sm underline text-gray-600 dark:text-gray-400 mt-4"
+        onClick={() => disconnect()}
+      >
+        Disconnect Wallet
+      </button>
+      <p className="text-xs text-gray-400 dark:text-gray-500">Click Disconnect to use WalletConnect</p>
     </div>
   );
 }

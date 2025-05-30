@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import { FrameProvider } from "@/components/farcaster-provider";
-import { HeaderActions } from "@/components/HeaderActions"; // Import the new component
+import { ThemeToggle } from "@/components/ThemeToggle"; // Импортируем кнопку переключения темы
 
 import "./globals.css";
 
@@ -42,12 +42,10 @@ export default function RootLayout({
       />
     </head>
     <body className={`${inter.className}`}>
-    <FrameProvider> {/* FrameProvider wraps everything that needs its context */}
-      <header className="flex justify-end px-4 pt-4 pb-0.5">
-        <HeaderActions />
-      </header>
-      {children}
-    </FrameProvider>
+    <header className="flex justify-end px-4 pt-4 pb-0.5">
+      <ThemeToggle />
+    </header>
+    <FrameProvider>{children}</FrameProvider>
     </body>
     </html>
   );
