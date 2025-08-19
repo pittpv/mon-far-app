@@ -20,6 +20,11 @@ export function FarcasterActions() {
           <ActionButton onClick={() => actions.viewProfile({ fid: 888234 })}>
             👤 View Author
           </ActionButton>
+          <ActionButton onClick={() =>
+            actions.openUrl("https://cards.monad.xyz/")
+          }>
+            🙏🏻 Nominate @pittpv in Cards
+          </ActionButton>
           <ActionButton onClick={() => actions.addFrame()}>
             ➕ Add MiniApp
           </ActionButton>
@@ -29,7 +34,7 @@ export function FarcasterActions() {
             📁 View GitHub Repo
           </ActionButton>
           <ActionButton onClick={() =>
-            actions.openUrl("https://testnet.monad.xyz/z")
+            actions.openUrl("https://testnet.monad.xyz/")
           }>
             🧪 Open Monad Testnet
           </ActionButton>
