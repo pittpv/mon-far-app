@@ -40,14 +40,38 @@ export async function verifyWebhookRequest(
       verifyAppKeyWithNeynar
     );
 
-    // Extract event type from verified data
-    // The verifiedData contains the event information
-    const event = requestBody.event as VerifiedWebhookData['event'];
+    console.log('🔍 Verified data from parseWebhookEvent:', JSON.stringify(verifiedData, null, 2));
+    console.log('🔍 Request body event:', requestBody.event);
+    console.log('🔍 Request body keys:', Object.keys(requestBody));
+
+    // parseWebhookEvent returns structure:
+    // { fid: number, appFid: number, event: { event: 'miniapp_added', notificationDetails: { token, url } } }
+    const eventData = (verifiedData as any).event;
+    
+    let event: VerifiedWebhookData['event'];
+    let notificationDetails: { token: string; url: string } | undefined;
+    
+    if (eventData && typeof eventData === 'object' && 'event' in eventData) {
+      // Event is an object with nested event and notificationDetails
+      event = eventData.event as VerifiedWebhookData['event'];
+      notificationDetails = eventData.notificationDetails;
+      console.log('🔍 Extracted from eventData object:', { event, notificationDetails });
+    } else {
+      // Fallback: try to extract from request body or verifiedData directly
+      event = (verifiedData as any).event || requestBody.event as VerifiedWebhookData['event'];
+      notificationDetails = 
+        (verifiedData as any).notificationDetails || 
+        requestBody.notificationDetails;
+      console.log('🔍 Using fallback extraction');
+    }
+    
+    console.log('🔍 Final extracted event:', event);
+    console.log('🔍 Final extracted notificationDetails:', notificationDetails ? JSON.stringify(notificationDetails, null, 2) : 'missing');
     
     return {
       fid: verifiedData.fid,
-      event,
-      notificationDetails: requestBody.notificationDetails,
+      event: event || 'miniapp_added', // Default to miniapp_added if event is missing
+      notificationDetails,
     };
   } catch (error: unknown) {
     const parseError = error as ParseWebhookEvent.ErrorType;
@@ -79,6 +103,8 @@ export async function verifyWebhookRequest(
  * In production, always use verifyWebhookRequest
  */
 function extractFidUnverified(requestBody: any): VerifiedWebhookData | null {
+  console.log('🔍 Extracting FID unverified, body keys:', Object.keys(requestBody));
+  
   // Try to extract from signature header if present
   if (requestBody.header) {
     try {
@@ -87,15 +113,16 @@ function extractFidUnverified(requestBody: any): VerifiedWebhookData | null {
       const buffer = typeof Buffer !== 'undefined' ? Buffer : (globalThis as any).Buffer;
       const decoded = buffer.from(requestBody.header, 'base64').toString('utf-8');
       const headerData = JSON.parse(decoded);
+      console.log('🔍 Header data:', headerData);
       if (headerData.fid) {
         return {
           fid: parseInt(headerData.fid, 10),
-          event: requestBody.event,
-          notificationDetails: requestBody.notificationDetails,
+          event: requestBody.event || requestBody.type || 'miniapp_added',
+          notificationDetails: requestBody.notificationDetails || requestBody.data,
         };
       }
     } catch (e) {
-      // Ignore parsing errors
+      console.error('🔍 Error parsing header:', e);
     }
   }
   
@@ -103,8 +130,8 @@ function extractFidUnverified(requestBody: any): VerifiedWebhookData | null {
   if (requestBody.fid) {
     return {
       fid: parseInt(requestBody.fid, 10),
-      event: requestBody.event,
-      notificationDetails: requestBody.notificationDetails,
+      event: requestBody.event || requestBody.type || 'miniapp_added',
+      notificationDetails: requestBody.notificationDetails || requestBody.data,
     };
   }
   

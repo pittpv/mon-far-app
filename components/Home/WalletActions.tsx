@@ -103,14 +103,17 @@ export function WalletActions() {
   const currentNetwork = selectedNetwork;
   const contractAddress = currentNetwork?.contractAddress || ZERO_ADDRESS;
   const contractAbi = currentNetwork?.abi || [];
+  // Statistics should always be available, voting requires wallet connection
   const isNetworkSupported = currentNetwork && contractAddress !== ZERO_ADDRESS && !isNetworkMismatch;
+  const isNetworkAvailableForRead = currentNetwork && contractAddress !== ZERO_ADDRESS;
 
   // === All Hooks Called Unconditionally First ===
+  // Statistics (votes) are always fetched regardless of wallet connection
   const { data: votes, refetch: refetchVotes } = useReadContract({
     address: contractAddress,
     abi: contractAbi,
     functionName: "getVotes",
-    query: { enabled: isNetworkSupported },
+    query: { enabled: isNetworkAvailableForRead },
   });
 
   const { data: canVote, refetch: refetchCanVote } = useReadContract({
@@ -150,9 +153,15 @@ export function WalletActions() {
 
   useEffect(() => {
     if (isConfirmed && address && receipt?.blockNumber) {
-      refetchVotes();
-      refetchCanVote();
-      refetchTimeUntilNextVote();
+      // Always refetch votes (statistics) after vote
+      if (isNetworkAvailableForRead) {
+        refetchVotes();
+      }
+      // Only refetch user-specific data if wallet is connected
+      if (isNetworkSupported) {
+        refetchCanVote();
+        refetchTimeUntilNextVote();
+      }
       setCurrentVoteTxHash(undefined);
       resetWriteContract(); // Reset writeContract state
       
@@ -169,6 +178,7 @@ export function WalletActions() {
             const blockTimestamp = data.timestamp || Math.floor(Date.now() / 1000);
             
             // Send vote information to server to schedule notification
+            console.log('📤 Sending vote to /api/send-notification:', { fid, address, voteTime: blockTimestamp, blockTimestamp });
             return fetch('/api/send-notification', {
               method: 'POST',
               headers: {
@@ -180,11 +190,19 @@ export function WalletActions() {
                 voteTime: blockTimestamp, // Block timestamp in seconds
                 blockTimestamp, // Explicit block timestamp
               }),
+            })
+            .then(res => {
+              console.log('📥 Response from /api/send-notification:', res.status, res.statusText);
+              return res.json();
+            })
+            .then(data => {
+              console.log('✅ Vote registration response:', data);
             });
           })
           .catch((error) => {
-            console.error('Failed to register vote for notifications:', error);
+            console.error('❌ Failed to register vote for notifications:', error);
             // Fallback: send without block timestamp
+            console.log('🔄 Trying fallback without block timestamp');
             fetch('/api/send-notification', {
               method: 'POST',
               headers: {
@@ -195,20 +213,30 @@ export function WalletActions() {
                 address,
                 voteTime: Math.floor(Date.now() / 1000),
               }),
-            }).catch(err => console.error('Fallback notification registration failed:', err));
+            })
+            .then(res => {
+              console.log('📥 Fallback response:', res.status);
+              return res.json();
+            })
+            .then(data => {
+              console.log('✅ Fallback response:', data);
+            })
+            .catch(err => console.error('❌ Fallback notification registration failed:', err));
           });
       }
     }
-  }, [isConfirmed, address, receipt, context, selectedNetworkKey, refetchVotes, refetchCanVote, refetchTimeUntilNextVote, resetWriteContract]);
+  }, [isConfirmed, address, receipt, context, selectedNetworkKey, isNetworkAvailableForRead, isNetworkSupported, refetchVotes, refetchCanVote, refetchTimeUntilNextVote, resetWriteContract]);
 
   // Refetch data when network changes
   useEffect(() => {
-    if (isNetworkSupported) {
+    if (isNetworkAvailableForRead) {
       refetchVotes();
+    }
+    if (isNetworkSupported) {
       refetchCanVote();
       refetchTimeUntilNextVote();
     }
-  }, [selectedNetworkKey, isNetworkSupported, refetchVotes, refetchCanVote, refetchTimeUntilNextVote]);
+  }, [selectedNetworkKey, isNetworkSupported, isNetworkAvailableForRead, refetchVotes, refetchCanVote, refetchTimeUntilNextVote]);
 
   // Close donate modal when wallet is connected
   useEffect(() => {

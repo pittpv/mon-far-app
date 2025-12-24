@@ -1,17 +1,42 @@
 import { useMiniAppContext } from "@/hooks/use-miniapp-context";
 import { APP_URL } from "@/lib/constants";
+import { useEffect, useState } from "react";
 
 export function FarcasterActions() {
-  const { actions } = useMiniAppContext();
+  const { actions, context } = useMiniAppContext();
+  const [isMiniAppAdded, setIsMiniAppAdded] = useState<boolean | null>(null);
+  const fid = context?.user?.fid;
+
+  useEffect(() => {
+    const checkMiniAppStatus = async () => {
+      if (!fid) {
+        setIsMiniAppAdded(null);
+        return;
+      }
+
+      try {
+        const response = await fetch(`/api/webhook?fid=${fid}`);
+        const data = await response.json();
+        setIsMiniAppAdded(data.hasToken || false);
+      } catch (error) {
+        console.error("Error checking MiniApp status:", error);
+        setIsMiniAppAdded(null);
+      }
+    };
+
+    checkMiniAppStatus();
+  }, [fid]);
 
   return (
     <div className="rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-6 shadow-md w-full transition-colors duration-300">
       <h2 className="text-2xl font-semibold text-gray-800 dark:text-white mb-4">Farcaster Actions</h2>
       {actions ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          <ActionButton onClick={() => actions.addFrame()}>
-            ➕ Add MiniApp
-          </ActionButton>
+          {isMiniAppAdded !== true && (
+            <ActionButton onClick={() => actions.addFrame()}>
+              ➕ Add MiniApp
+            </ActionButton>
+          )}
           <ActionButton onClick={() =>
             actions.composeCast({
               text: "Check out this Monad Farcaster Happy Vote MiniApp",

@@ -53,18 +53,28 @@ export async function saveUserVote(
   const adapter = getAdapter();
   const tokenData = await adapter.getNotificationToken(fid);
   
-  if (tokenData) {
-    // Use block timestamp if available for more accurate cooldown calculation
-    const actualVoteTime = blockTimestamp || voteTime;
-    
+  if (!tokenData) {
+    console.warn(`⚠️ No notification token found for FID ${fid}. Vote data will not be saved. User needs to add MiniApp first via webhook.`);
+    return;
+  }
+  
+  // Use block timestamp if available for more accurate cooldown calculation
+  const actualVoteTime = blockTimestamp || voteTime;
+  
+  try {
     await adapter.saveNotificationToken({
       ...tokenData,
       address,
       lastVoteTime: actualVoteTime,
     });
     
+    console.log(`✅ Vote saved for FID ${fid}, address ${address}, voteTime ${actualVoteTime}`);
+    
     // Schedule notification for when cooldown ends (24 hours = 86400 seconds)
     scheduleCooldownNotification(fid, address, actualVoteTime);
+  } catch (error) {
+    console.error(`❌ Failed to save vote for FID ${fid}:`, error);
+    throw error;
   }
 }
 
@@ -112,6 +122,12 @@ async function sendCooldownNotification(fid: number, address: string) {
   try {
     const { APP_URL } = await import('@/lib/constants');
     const notificationId = `cooldown-ended-${fid}-${Date.now()}`;
+    
+    // Format address for display (first 6 and last 4 characters)
+    const formattedAddress = address.length > 10 
+      ? `${address.slice(0, 6)}...${address.slice(-4)}`
+      : address;
+    
     const response = await fetch(tokenData.url, {
       method: 'POST',
       headers: {
@@ -120,7 +136,7 @@ async function sendCooldownNotification(fid: number, address: string) {
       body: JSON.stringify({
         notificationId,
         title: 'Voting is available!',
-        body: 'The cooldown has expired. Please vote again!',
+        body: `The cooldown has expired for address ${formattedAddress}. Please vote again!`,
         targetUrl: APP_URL,
         tokens: [tokenData.token],
       }),
