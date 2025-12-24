@@ -3,6 +3,7 @@ import {
   SendNotificationRequest,
   sendNotificationResponseSchema,
 } from "@farcaster/frame-sdk";
+import { getNotificationToken } from "./notification-storage";
 
 type SendFrameNotificationResult =
   | {
@@ -22,10 +23,10 @@ export async function sendFrameNotification({
   title: string;
   body: string;
 }): Promise<SendFrameNotificationResult> {
-  // TODO: Get notification details
-  const notificationDetails = { url: "", token: "" };
+  // Get notification token from storage
+  const notificationDetails = await getNotificationToken(fid);
 
-  if (!notificationDetails) {
+  if (!notificationDetails || !notificationDetails.token || !notificationDetails.url) {
     return { state: "no_token" };
   }
 

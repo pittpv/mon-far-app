@@ -9,6 +9,9 @@ export function FarcasterActions() {
       <h2 className="text-2xl font-semibold text-gray-800 dark:text-white mb-4">Farcaster Actions</h2>
       {actions ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          <ActionButton onClick={() => actions.addFrame()}>
+            ➕ Add MiniApp
+          </ActionButton>
           <ActionButton onClick={() =>
             actions.composeCast({
               text: "Check out this Monad Farcaster Happy Vote MiniApp",
@@ -21,25 +24,9 @@ export function FarcasterActions() {
             👤 View Author
           </ActionButton>
           <ActionButton onClick={() =>
-            actions.openUrl("https://cards.monad.xyz/")
-          }>
-            🙏🏻 Nominate @pittpv in Cards
-          </ActionButton>
-          <ActionButton onClick={() => actions.addFrame()}>
-            ➕ Add MiniApp
-          </ActionButton>
-          <ActionButton onClick={() =>
             actions.openUrl("https://github.com/pittpv/mon-far-app/tree/main")
           }>
-            📁 View GitHub Repo
-          </ActionButton>
-          <ActionButton onClick={() =>
-            actions.openUrl("https://testnet.monad.xyz/")
-          }>
-            🧪 Open Monad Testnet
-          </ActionButton>
-          <ActionButton onClick={() => actions.signIn({ nonce: "1201" })}>
-            🔐 Sign in with Farcaster
+            📁 View Github
           </ActionButton>
         </div>
       ) : (

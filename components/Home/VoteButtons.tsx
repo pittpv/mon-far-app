@@ -34,7 +34,8 @@ export function VoteButtons() {
     }
 
     // Приводим к типу bigint для более безопасных вычислений
-    const [happyVotes, sadVotes] = votes || [0n, 0n] // Обратите внимание на использование bigint (0n)
+    const votesData: [bigint, bigint] | undefined = Array.isArray(votes) ? votes as [bigint, bigint] : undefined
+    const [happyVotes, sadVotes] = votesData || [0n, 0n] // Обратите внимание на использование bigint (0n)
     const total = happyVotes + sadVotes
     const happyPct = total > 0n ? Math.round(Number((happyVotes * 100n) / total)) : 0 // Приводим к числу для процента
     const sadPct = total > 0n ? 100 - happyPct : 0

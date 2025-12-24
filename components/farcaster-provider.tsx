@@ -54,7 +54,7 @@ export function FrameProvider({ children }: FrameProviderProps) {
         } else {
           setError("Failed to load Farcaster context");
         }
-        await sdk.actions.ready();
+        // Don't call ready() here - it should be called when UI is ready
       } catch (err) {
         setError(
           err instanceof Error ? err.message : "Failed to initialize SDK"

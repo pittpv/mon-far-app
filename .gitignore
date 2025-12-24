@@ -41,3 +41,6 @@ components/Home/FarcasterActions — old dsgn.tsx
 components/Home/index — old dsgn.tsx
 components/Home/User — old dsgn.tsx
 components/Home/WalletActions — old dsgn.tsx
+
+.vercel
+NOTIFICATION_SETUP.md
