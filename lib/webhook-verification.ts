@@ -6,7 +6,7 @@ import type { ParseWebhookEvent } from "@farcaster/miniapp-node";
 
 export interface VerifiedWebhookData {
   fid: number;
-  event: 'miniapp_added' | 'miniapp_removed' | 'notifications_enabled' | 'notifications_disabled';
+  event: 'miniapp_added' | 'miniapp_removed' | 'notifications_enabled' | 'notifications_disabled' | 'frame_added' | 'frame_removed';
   notificationDetails?: {
     token: string;
     url: string;
@@ -40,7 +40,8 @@ export async function verifyWebhookRequest(
       verifyAppKeyWithNeynar
     );
 
-    console.log('🔍 Verified data from parseWebhookEvent:', JSON.stringify(verifiedData, null, 2));
+    // Don't log verified data - may contain sensitive token information
+    console.log('🔍 Webhook verified successfully');
     console.log('🔍 Request body event:', requestBody.event);
     console.log('🔍 Request body keys:', Object.keys(requestBody));
 
@@ -55,7 +56,8 @@ export async function verifyWebhookRequest(
       // Event is an object with nested event and notificationDetails
       event = eventData.event as VerifiedWebhookData['event'];
       notificationDetails = eventData.notificationDetails;
-      console.log('🔍 Extracted from eventData object:', { event, notificationDetails });
+      // Don't log notificationDetails - contains sensitive token data
+      console.log('🔍 Extracted from eventData object:', { event, hasNotificationDetails: !!notificationDetails });
     } else {
       // Fallback: try to extract from request body or verifiedData directly
       event = (verifiedData as any).event || requestBody.event as VerifiedWebhookData['event'];
@@ -66,7 +68,8 @@ export async function verifyWebhookRequest(
     }
     
     console.log('🔍 Final extracted event:', event);
-    console.log('🔍 Final extracted notificationDetails:', notificationDetails ? JSON.stringify(notificationDetails, null, 2) : 'missing');
+    // Don't log notificationDetails - contains sensitive token data
+    console.log('🔍 Final extracted notificationDetails:', notificationDetails ? 'present' : 'missing');
     
     return {
       fid: verifiedData.fid,
@@ -113,7 +116,7 @@ function extractFidUnverified(requestBody: any): VerifiedWebhookData | null {
       const buffer = typeof Buffer !== 'undefined' ? Buffer : (globalThis as any).Buffer;
       const decoded = buffer.from(requestBody.header, 'base64').toString('utf-8');
       const headerData = JSON.parse(decoded);
-      console.log('🔍 Header data:', headerData);
+      // Don't log full header data - may contain sensitive information
       if (headerData.fid) {
         return {
           fid: parseInt(headerData.fid, 10),

@@ -15,16 +15,16 @@ const getMetadata = () => {
   if (typeof window !== 'undefined') {
     const origin = window.location.origin;
     return {
-      name: "Monad Farcaster Happy Vote",
+      name: "Happy World Vote",
       description: "Make the world happier with blockchain voting",
       url: origin,
       icons: [`${origin}/images/icon.png`],
     };
   }
   // Fallback для SSR - используем переменную окружения
-  const defaultUrl = process.env.NEXT_PUBLIC_URL || "https://mon-far-app.vercel.app";
+  const defaultUrl = process.env.NEXT_PUBLIC_URL || "https://farcaster.happyvote.xyz/";
   return {
-    name: "Monad Farcaster Happy Vote",
+    name: "Happy World Vote",
     description: "Make the world happier with blockchain voting",
     url: defaultUrl,
     icons: [`${defaultUrl}/images/icon.png`],
@@ -45,13 +45,13 @@ function getConnectors() {
   }
 
   const baseConnectors = [farcasterFrame()];
-  
+
   // На сервере возвращаем только базовые коннекторы
   if (typeof window === 'undefined') {
     cachedConnectors = baseConnectors;
     return cachedConnectors;
   }
-  
+
   if (!PROJECT_ID) {
     if (!initLogged) {
       console.warn(
@@ -69,7 +69,7 @@ function getConnectors() {
   try {
     const origin = window.location.origin;
     const metadata = getMetadata();
-    
+
     // Логируем только один раз
     if (!initLogged) {
       console.log('🔗 Initializing WalletConnect/Reown:');
@@ -87,18 +87,18 @@ function getConnectors() {
       console.log('     7. Refresh the page after adding domain');
       initLogged = true;
     }
-    
+
     const walletConnectConnector = walletConnect({
       projectId: PROJECT_ID,
       metadata,
       showQrModal: true,
     });
-    
+
     const allConnectors = [...baseConnectors, walletConnectConnector];
-    
+
     console.log('✅ WalletConnect connector created successfully');
     console.log('📋 Total connectors:', allConnectors.length, '(including WalletConnect)');
-    
+
     cachedConnectors = allConnectors;
     return cachedConnectors;
   } catch (error) {

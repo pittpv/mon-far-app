@@ -10,22 +10,20 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
     
-    // Log full body for debugging
-    console.log('📬 Full webhook body:', JSON.stringify(body, null, 2));
-    
+    // Log event info without sensitive data
     const { event, notificationDetails } = body;
     
     // Also check for alternative field names that Farcaster might use
     const altEvent = body.type || body.action || body.eventType;
     const altDetails = body.data || body.payload || body.notification || body.details;
     
-    console.log('📬 Webhook event received:', JSON.stringify({ 
+    console.log('📬 Webhook event received:', { 
       event, 
       altEvent,
       hasNotificationDetails: !!notificationDetails,
       hasAltDetails: !!altDetails,
       bodyKeys: Object.keys(body)
-    }, null, 2));
+    });
 
     // Verify webhook signature (uses Neynar if NEYNAR_API_KEY is set)
     const verifiedData = await verifyWebhookRequest(body);
@@ -33,7 +31,7 @@ export async function POST(request: NextRequest) {
 
     if (!verifiedData || !verifiedData.fid) {
       console.warn('⚠️ Could not verify or extract FID from webhook request');
-      console.warn('⚠️ Request body:', JSON.stringify(body, null, 2));
+      // Don't log full body - may contain sensitive data
       // Still return 200 to prevent retries, but log the issue
       return NextResponse.json({ success: false, error: 'Verification failed or FID not found' }, { status: 200 });
     }
@@ -42,20 +40,23 @@ export async function POST(request: NextRequest) {
     console.log(`✅ Verified FID: ${fid}`);
 
     // Handle different event types
-    // Use verified notification details if available, otherwise fall back to body
+    // PRIORITY: Use event from verifiedData first (it's extracted from signed payload)
+    // Fallback to body only if verifiedData doesn't have event
+    const actualEvent = verifiedData.event || event || altEvent;
     const details = verifiedData.notificationDetails || notificationDetails || altDetails;
-    const actualEvent = event || altEvent;
     
-    console.log(`📋 Event details:`, JSON.stringify({ 
+    console.log(`📋 Event details:`, { 
       event: actualEvent, 
+      eventSource: verifiedData.event ? 'verifiedData' : (event ? 'body' : 'altEvent'),
       hasDetails: !!details, 
       hasToken: !!details?.token, 
       hasUrl: !!details?.url,
       detailsKeys: details ? Object.keys(details) : []
-    }, null, 2));
+    });
 
     // If event is undefined but we have FID, assume it's miniapp_added
     // This handles cases where Farcaster sends webhook without explicit event type
+    // BUT only if we don't have a verified event from the signed payload
     if (!actualEvent) {
       console.log(`⚠️ Event type is undefined, assuming miniapp_added for FID: ${fid}`);
       // Try to extract token and url from body directly if details are missing
@@ -69,13 +70,14 @@ export async function POST(request: NextRequest) {
       } else {
         console.warn(`⚠️ Cannot save token - missing token or url for FID: ${fid}`);
         console.warn(`⚠️ Token: ${token ? 'present' : 'missing'}, URL: ${url ? 'present' : 'missing'}`);
-        console.warn(`⚠️ Full body structure:`, JSON.stringify(body, null, 2));
+        // Don't log full body - may contain sensitive data
       }
       return NextResponse.json({ success: true }, { status: 200 });
     }
 
     switch (actualEvent) {
       case 'miniapp_added':
+      case 'frame_added': // Legacy event name support
         console.log(`🔄 Processing miniapp_added for FID: ${fid}`);
         if (details?.token && details?.url) {
           console.log(`💾 Saving notification token for FID: ${fid}`);
@@ -83,16 +85,19 @@ export async function POST(request: NextRequest) {
           console.log(`✅ MiniApp added for FID: ${fid}`);
         } else {
           console.warn(`⚠️ MiniApp added event missing notification details for FID: ${fid}`);
-          console.warn(`⚠️ Details:`, JSON.stringify(details, null, 2));
+          // Don't log details - may contain sensitive token data
         }
         break;
 
       case 'miniapp_removed':
+      case 'frame_removed': // Legacy event name support (as seen in your logs)
+        console.log(`🔄 Processing miniapp_removed for FID: ${fid}`);
         await removeNotificationToken(fid);
         console.log(`🗑️ MiniApp removed for FID: ${fid}`);
         break;
 
       case 'notifications_disabled':
+        console.log(`🔄 Processing notifications_disabled for FID: ${fid}`);
         await removeNotificationToken(fid);
         console.log(`🔕 Notifications disabled for FID: ${fid}`);
         break;
@@ -105,13 +110,13 @@ export async function POST(request: NextRequest) {
           console.log(`🔔 Notifications enabled for FID: ${fid}`);
         } else {
           console.warn(`⚠️ Notifications enabled event missing notification details for FID: ${fid}`);
-          console.warn(`⚠️ Details:`, JSON.stringify(details, null, 2));
+          // Don't log details - may contain sensitive token data
         }
         break;
 
       default:
         console.log(`⚠️ Unknown event type: ${actualEvent}`);
-        console.log(`⚠️ Full body:`, JSON.stringify(body, null, 2));
+        // Don't log full body - may contain sensitive data
     }
 
     return NextResponse.json({ success: true }, { status: 200 });
@@ -126,7 +131,17 @@ export async function POST(request: NextRequest) {
 
 
 // Export function to manually check token (for testing)
+// PROTECTED: Requires API key authentication in production
 export async function GET(request: NextRequest) {
+  // Protect this endpoint - requires authentication in production
+  const { isAuthorized } = await import('@/lib/api-auth');
+  if (!isAuthorized(request)) {
+    return NextResponse.json(
+      { error: 'Unauthorized. This endpoint requires API key authentication.' },
+      { status: 401 }
+    );
+  }
+
   const searchParams = request.nextUrl.searchParams;
   const fid = searchParams.get('fid');
   
@@ -140,6 +155,7 @@ export async function GET(request: NextRequest) {
         fid: tokenData.fid,
         hasAddress: !!tokenData.address,
         lastVoteTime: tokenData.lastVoteTime,
+        votesCount: tokenData.votes?.length || 0,
       } : null,
     });
   }

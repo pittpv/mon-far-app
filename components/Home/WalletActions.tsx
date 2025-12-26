@@ -178,7 +178,8 @@ export function WalletActions() {
             const blockTimestamp = data.timestamp || Math.floor(Date.now() / 1000);
             
             // Send vote information to server to schedule notification
-            console.log('📤 Sending vote to /api/send-notification:', { fid, address, voteTime: blockTimestamp, blockTimestamp });
+            const addressMasked = address ? `${address.slice(0, 6)}...${address.slice(-4)}` : null;
+            console.log('📤 Sending vote to /api/send-notification:', { fid, addressMasked, voteTime: blockTimestamp, blockTimestamp, network: networkKey });
             return fetch('/api/send-notification', {
               method: 'POST',
               headers: {
@@ -189,6 +190,7 @@ export function WalletActions() {
                 address,
                 voteTime: blockTimestamp, // Block timestamp in seconds
                 blockTimestamp, // Explicit block timestamp
+                network: networkKey, // Network identifier (e.g., "mainnet", "baseMainnet", "testnet")
               }),
             })
             .then(res => {

@@ -2,12 +2,24 @@
 // This provides an abstraction layer so you can easily switch between
 // in-memory storage, file-based storage, or a real database
 
+export interface VoteRecord {
+  address: string;
+  network: string; // Network identifier (e.g., "mainnet", "base", "monad")
+  voteTime: number;
+  cooldownEndTime: number;
+}
+
 export interface NotificationToken {
   fid: number;
   token: string;
   url: string;
+  // Legacy fields: deprecated, only used during data migration
+  // After migration-remove-legacy-fields.sql is run, these will always be undefined
+  // All vote data should be stored in votes array
   address?: string;
   lastVoteTime?: number;
+  // Primary field: array of votes to support multiple addresses per FID
+  votes?: VoteRecord[];
   createdAt?: number;
   updatedAt?: number;
 }
@@ -211,23 +223,90 @@ class PostgreSQLAdapter implements DatabaseAdapter {
       'SELECT * FROM notification_tokens WHERE fid = $1',
       [fid]
     );
-    return result.rows[0] || null;
+    
+    if (!result.rows[0]) {
+      return null;
+    }
+    
+    const row = result.rows[0];
+    
+    // Parse votes JSON if it exists
+    let votes: VoteRecord[] | undefined;
+    if (row.votes) {
+      try {
+        votes = typeof row.votes === 'string' ? JSON.parse(row.votes) : row.votes;
+      } catch (error) {
+        console.warn(`⚠️ Failed to parse votes JSON for FID ${fid}:`, error);
+        votes = undefined;
+      }
+    }
+    
+    return {
+      fid: row.fid,
+      token: row.token,
+      url: row.url,
+      // Legacy fields: only include if they exist in database (for backward compatibility)
+      // After migration-remove-legacy-fields.sql, these will be undefined
+      address: row.address || undefined,
+      lastVoteTime: row.last_vote_time ? Math.floor(new Date(row.last_vote_time).getTime() / 1000) : undefined,
+      votes,
+      createdAt: row.created_at ? Math.floor(new Date(row.created_at).getTime() / 1000) : undefined,
+      updatedAt: row.updated_at ? Math.floor(new Date(row.updated_at).getTime() / 1000) : undefined,
+    };
   }
 
   async saveNotificationToken(token: NotificationToken): Promise<void> {
     try {
-      await this.pool.query(
-        `INSERT INTO notification_tokens (fid, token, url, address, last_vote_time, created_at, updated_at)
-         VALUES ($1, $2, $3, $4, $5, NOW(), NOW())
-         ON CONFLICT (fid) DO UPDATE SET
-           token = EXCLUDED.token,
-           url = EXCLUDED.url,
-           address = EXCLUDED.address,
-           last_vote_time = EXCLUDED.last_vote_time,
-           updated_at = NOW()`,
-        [token.fid, token.token, token.url, token.address || null, token.lastVoteTime || null]
-      );
-      console.log(`✅ PostgreSQL: Saved token for FID ${token.fid}`);
+      // Convert votes array to JSON for storage
+      const votesJson = token.votes ? JSON.stringify(token.votes) : null;
+      
+      // Check if legacy columns exist (for backward compatibility during migration)
+      // After migration-remove-legacy-fields.sql is run, these columns won't exist
+      const hasLegacyColumns = token.address !== undefined || token.lastVoteTime !== undefined;
+      
+      if (hasLegacyColumns) {
+        // Legacy mode: include address and last_vote_time columns
+        await this.pool.query(
+          `INSERT INTO notification_tokens (fid, token, url, address, last_vote_time, votes, created_at, updated_at)
+           VALUES ($1, $2, $3, $4, $5, $6, NOW(), NOW())
+           ON CONFLICT (fid) DO UPDATE SET
+             token = EXCLUDED.token,
+             url = EXCLUDED.url,
+             -- Preserve existing address and last_vote_time if new values are NULL
+             address = COALESCE(EXCLUDED.address, notification_tokens.address),
+             last_vote_time = COALESCE(EXCLUDED.last_vote_time, notification_tokens.last_vote_time),
+             -- Preserve votes array if new value is NULL, otherwise update it
+             votes = COALESCE(EXCLUDED.votes, notification_tokens.votes),
+             updated_at = NOW()`,
+          [
+            token.fid, 
+            token.token, 
+            token.url, 
+            token.address || null, 
+            token.lastVoteTime || null,
+            votesJson
+          ]
+        );
+      } else {
+        // New mode: only votes array (after legacy columns are removed)
+        await this.pool.query(
+          `INSERT INTO notification_tokens (fid, token, url, votes, created_at, updated_at)
+           VALUES ($1, $2, $3, $4, NOW(), NOW())
+           ON CONFLICT (fid) DO UPDATE SET
+             token = EXCLUDED.token,
+             url = EXCLUDED.url,
+             -- Preserve votes array if new value is NULL, otherwise update it
+             votes = COALESCE(EXCLUDED.votes, notification_tokens.votes),
+             updated_at = NOW()`,
+          [
+            token.fid, 
+            token.token, 
+            token.url, 
+            votesJson
+          ]
+        );
+      }
+      console.log(`✅ PostgreSQL: Saved token for FID ${token.fid}, votes: ${token.votes?.length || 0}`);
     } catch (error) {
       console.error(`❌ PostgreSQL: Failed to save token for FID ${token.fid}:`, error);
       throw error;

@@ -44,3 +44,10 @@ components/Home/WalletActions — old dsgn.tsx
 
 .vercel
 NOTIFICATION_SETUP.md
+/LEGACY_FIELDS_REMOVAL.md
+/migration-add-votes-column.sql
+/migration-remove-legacy-fields.sql
+/MULTIPLE_ADDRESSES_ISSUE.md
+/SECURITY.md
+/supabase-rls-setup.sql
+/UPDATE_LOGIC_ANALYSIS.md

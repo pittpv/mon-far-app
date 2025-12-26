@@ -5,11 +5,11 @@ export async function GET() {
   const farcasterConfig = {
     accountAssociation: {
       header:
-        "eyJmaWQiOjg4ODIzNCwidHlwZSI6ImN1c3RvZHkiLCJrZXkiOiIweEM4MTM3MDM5QkNCYzQ0OUQ2NDJFRDA4ZDFmNEI0MDJCNTc2QTY1MjUifQ",
+        "eyJmaWQiOjg4ODIzNCwidHlwZSI6ImF1dGgiLCJrZXkiOiIweEFBNTA4REZEZEExNjZFYTM0RkFCNTFiNjI1NUZCM2M3Q2QzQWNkMjcifQ",
       payload:
-        "eyJkb21haW4iOiJtb24tZmFyLWFwcC52ZXJjZWwuYXBwIn0",
+        "eyJkb21haW4iOiJmYXJjYXN0ZXIuaGFwcHl2b3RlLnh5eiJ9",
       signature:
-        "MHg3ZDdhNjk1MDNjN2NkMzE3NzZmMjRhOGM4ZjYyMzQ1MTAwMGRjNGQzZTQzY2Y4NjBlNzI5MWUyMzRjOWM0NDU2NTM1ZjJhNzdjYmY0NjZhYzFlZWVjYjdiODNmNjkyOWYxYTFlNDI5ZTQ3ZTUxYzA5ZGE0NTljZjEyNTBkNTMwNzFj",
+        "CzsPG8zV02a5c89HfFQ0FlRL3KH2NZZZvqGRlGYtoFZyTvxA4uC7yMISaE7tUeK1rejRIcmCq/KSOQ2k3VYY9Rs=",
     },
     frame: {
       version: "1",

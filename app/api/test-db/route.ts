@@ -1,7 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getDatabaseAdapter } from '@/lib/db-adapter';
+import { isAuthorized } from '@/lib/api-auth';
 
 export async function GET(request: NextRequest) {
+  // Protect this endpoint - requires authentication in production
+  if (!isAuthorized(request)) {
+    return NextResponse.json(
+      { error: 'Unauthorized. This endpoint requires API key authentication.' },
+      { status: 401 }
+    );
+  }
   try {
     const adapter = getDatabaseAdapter();
     
@@ -57,11 +65,13 @@ export async function GET(request: NextRequest) {
       totalTokens: allTokens.length,
       testInsert: testInsertSuccess ? 'OK' : `Failed: ${testInsertError}`,
       environment: envVars,
+      // Don't expose full token data - only metadata
       tokens: allTokens.map(t => ({
         fid: t.fid,
         hasToken: !!t.token,
         hasAddress: !!t.address,
         lastVoteTime: t.lastVoteTime,
+        votesCount: t.votes?.length || 0,
       })),
     });
   } catch (error: any) {
@@ -72,4 +82,5 @@ export async function GET(request: NextRequest) {
     }, { status: 500 });
   }
 }
+
 
