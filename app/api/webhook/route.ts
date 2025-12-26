@@ -5,10 +5,54 @@ import {
   getNotificationToken,
 } from '@/lib/notification-storage';
 import { verifyWebhookRequest } from '@/lib/webhook-verification';
+import { checkRateLimit, getClientIdentifier, RATE_LIMITS } from '@/lib/rate-limit';
+
+// Maximum request body size: 50KB (webhooks may contain more data)
+const MAX_BODY_SIZE = 50 * 1024;
 
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json();
+    // Rate limiting
+    const clientId = getClientIdentifier(request);
+    const rateLimitResult = checkRateLimit(clientId, RATE_LIMITS.webhook);
+    
+    if (!rateLimitResult.allowed) {
+      return NextResponse.json(
+        { 
+          success: false,
+          error: 'Rate limit exceeded',
+        },
+        { 
+          status: 429,
+          headers: {
+            'X-RateLimit-Limit': RATE_LIMITS.webhook.maxRequests.toString(),
+            'X-RateLimit-Remaining': rateLimitResult.remaining.toString(),
+            'X-RateLimit-Reset': new Date(rateLimitResult.resetTime).toISOString(),
+            'Retry-After': Math.ceil((rateLimitResult.resetTime - Date.now()) / 1000).toString(),
+          },
+        }
+      );
+    }
+
+    // Check Content-Length header to prevent DoS
+    const contentLength = request.headers.get('content-length');
+    if (contentLength && parseInt(contentLength, 10) > MAX_BODY_SIZE) {
+      return NextResponse.json(
+        { success: false, error: 'Request body too large' },
+        { status: 413 }
+      );
+    }
+
+    // Read body with size limit
+    const bodyText = await request.text();
+    if (bodyText.length > MAX_BODY_SIZE) {
+      return NextResponse.json(
+        { success: false, error: 'Request body too large' },
+        { status: 413 }
+      );
+    }
+
+    const body = JSON.parse(bodyText);
     
     // Log event info without sensitive data
     const { event, notificationDetails } = body;
@@ -119,11 +163,33 @@ export async function POST(request: NextRequest) {
         // Don't log full body - may contain sensitive data
     }
 
-    return NextResponse.json({ success: true }, { status: 200 });
-  } catch (error) {
-    console.error('❌ Webhook error:', error);
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { success: true },
+      {
+        status: 200,
+        headers: {
+          'X-RateLimit-Limit': RATE_LIMITS.webhook.maxRequests.toString(),
+          'X-RateLimit-Remaining': (rateLimitResult.remaining - 1).toString(),
+          'X-RateLimit-Reset': new Date(rateLimitResult.resetTime).toISOString(),
+        },
+      }
+    );
+  } catch (error) {
+    // Handle JSON parsing errors
+    if (error instanceof SyntaxError) {
+      return NextResponse.json(
+        { success: false, error: 'Invalid JSON in request body' },
+        { status: 400 }
+      );
+    }
+
+    console.error('❌ Webhook error:', error);
+    // Only log stack in development
+    if (error instanceof Error && process.env.NODE_ENV === 'development') {
+      console.error('❌ Error stack:', error.stack);
+    }
+    return NextResponse.json(
+      { success: false, error: 'Internal server error' },
       { status: 500 }
     );
   }

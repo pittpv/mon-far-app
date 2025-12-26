@@ -3,29 +3,26 @@ import App from "@/components/pages/app";
 import { APP_URL } from "@/lib/constants";
 
 const frame = {
-  version: "next",
+  version: "1",
   imageUrl: `${APP_URL}/images/feed.png`,
   button: {
     title: "Vote Now",
     action: {
       type: "launch_frame",
-      name: "MiniApp for Monad Farcaster",
-      url: APP_URL,
-      splashImageUrl: `${APP_URL}/images/splash.png`,
-      splashBackgroundColor: "#facc9b",
+      name: "Happy World Vote",
     },
   },
 };
 
 export async function generateMetadata(): Promise<Metadata> {
   return {
-    title: "MiniApp for Monad Farcaster",
+    title: "Happy World Vote",
     openGraph: {
-      title: "MiniApp for Monad Farcaster",
+      title: "Happy World Vote App for Farcaster",
       description: "Happy World App - just vote",
     },
     other: {
-      "fc:frame": JSON.stringify(frame),
+      "fc:miniapp": JSON.stringify(frame),
     },
   };
 }

@@ -1,6 +1,34 @@
 // API authentication utilities
 // Used to protect test/debug endpoints
 
+import { timingSafeEqual } from 'crypto';
+
+/**
+ * Secure string comparison using constant-time algorithm to prevent timing attacks
+ * @param a - First string to compare
+ * @param b - Second string to compare
+ * @returns true if strings are equal, false otherwise
+ */
+function secureCompare(a: string, b: string): boolean {
+  if (a.length !== b.length) {
+    return false;
+  }
+  
+  // Use Node.js crypto.timingSafeEqual for constant-time comparison
+  try {
+    const aBuffer = Buffer.from(a, 'utf8');
+    const bBuffer = Buffer.from(b, 'utf8');
+    return timingSafeEqual(aBuffer, bBuffer);
+  } catch {
+    // Fallback: constant-time comparison if timingSafeEqual fails
+    let result = 0;
+    for (let i = 0; i < a.length; i++) {
+      result |= a.charCodeAt(i) ^ b.charCodeAt(i);
+    }
+    return result === 0;
+  }
+}
+
 /**
  * Check if API request is authorized
  * Uses API_KEY environment variable for authentication
@@ -32,7 +60,8 @@ export function isAuthorized(request: Request): boolean {
     ? authHeader.slice(7) 
     : authHeader;
 
-  return token === apiKey;
+  // Use secure comparison to prevent timing attacks
+  return secureCompare(token, apiKey);
 }
 
 /**
@@ -50,4 +79,5 @@ export function getApiKey(request: Request): string | null {
     ? authHeader.slice(7) 
     : authHeader;
 }
+
 

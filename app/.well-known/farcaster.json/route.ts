@@ -30,6 +30,11 @@ export async function GET() {
       splashImageUrl: `${APP_URL}/images/splash.png`,
       splashBackgroundColor: "#facc9b",
       webhookUrl: `${APP_URL}/api/webhook`,
+      subtitle: "Make the world happier",
+      description: "Vote on how happy you feel and contribute to making the world a better place through blockchain voting on Monad and Base networks",
+      ogTitle: "Happy World Vote",
+      ogDescription: "Vote on happiness and make the world better through blockchain voting",
+      ogImageUrl: `${APP_URL}/images/feed.png`,
     },
   };
 

@@ -15,6 +15,32 @@ export async function GET(request: NextRequest) {
       );
     }
 
+    // Validate blockNumber is a valid positive integer
+    if (!/^\d+$/.test(blockNumber)) {
+      return NextResponse.json(
+        { error: 'blockNumber must be a valid positive integer' },
+        { status: 400 }
+      );
+    }
+
+    // Validate blockNumber is within reasonable bounds (prevent DoS)
+    const blockNumberBigInt = BigInt(blockNumber);
+    if (blockNumberBigInt < 0n || blockNumberBigInt > 2n ** 64n - 1n) {
+      return NextResponse.json(
+        { error: 'blockNumber is out of valid range' },
+        { status: 400 }
+      );
+    }
+
+    // Validate network key is one of the allowed values
+    const allowedNetworks = Object.keys(NETWORKS) as Array<keyof typeof NETWORKS>;
+    if (!allowedNetworks.includes(networkKey)) {
+      return NextResponse.json(
+        { error: `Invalid network. Allowed values: ${allowedNetworks.join(', ')}` },
+        { status: 400 }
+      );
+    }
+
     const network = getNetworkByKey(networkKey);
     if (!network) {
       return NextResponse.json(
@@ -31,7 +57,7 @@ export async function GET(request: NextRequest) {
 
     // Get block by number
     const block = await publicClient.getBlock({
-      blockNumber: BigInt(blockNumber),
+      blockNumber: blockNumberBigInt,
     });
 
     // Return timestamp in seconds
@@ -47,5 +73,6 @@ export async function GET(request: NextRequest) {
     );
   }
 }
+
 
 

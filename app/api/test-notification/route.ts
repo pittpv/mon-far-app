@@ -133,8 +133,54 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const body = await request.json();
-    const { fid, title, body: bodyText } = body;
+    // Maximum request body size: 10KB
+    const MAX_BODY_SIZE = 10 * 1024;
+    
+    // Check Content-Length header to prevent DoS
+    const contentLength = request.headers.get('content-length');
+    if (contentLength && parseInt(contentLength, 10) > MAX_BODY_SIZE) {
+      return NextResponse.json(
+        { error: 'Request body too large' },
+        { status: 413 }
+      );
+    }
+
+    // Read body with size limit
+    const bodyText = await request.text();
+    if (bodyText.length > MAX_BODY_SIZE) {
+      return NextResponse.json(
+        { error: 'Request body too large' },
+        { status: 413 }
+      );
+    }
+
+    const body = JSON.parse(bodyText);
+    const { fid, title, body: notificationBody } = body;
+    
+    // Validate fid if provided
+    if (fid !== undefined && fid !== null) {
+      if (typeof fid !== 'number' || !Number.isInteger(fid) || fid <= 0) {
+        return NextResponse.json(
+          { error: 'fid must be a positive integer' },
+          { status: 400 }
+        );
+      }
+    }
+    
+    // Validate title and body length (prevent DoS)
+    if (title && typeof title === 'string' && title.length > 1000) {
+      return NextResponse.json(
+        { error: 'title exceeds maximum length of 1000 characters' },
+        { status: 400 }
+      );
+    }
+    
+    if (notificationBody && typeof notificationBody === 'string' && notificationBody.length > 10000) {
+      return NextResponse.json(
+        { error: 'body exceeds maximum length of 10000 characters' },
+        { status: 400 }
+      );
+    }
     
     let targetFid: number | null = fid;
     
@@ -171,7 +217,7 @@ export async function POST(request: NextRequest) {
     const result = await sendFrameNotification({
       fid: targetFid,
       title: title || 'Test Notification',
-      body: bodyText || `This is a test notification sent at ${new Date().toISOString()}`,
+      body: notificationBody || `This is a test notification sent at ${new Date().toISOString()}`,
       notificationId: `test-${targetFid}-${Date.now()}`,
     });
     
