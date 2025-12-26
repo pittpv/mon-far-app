@@ -10,6 +10,9 @@ const frame = {
     action: {
       type: "launch_frame",
       name: "Happy World Vote",
+      url: APP_URL,
+      splashImageUrl: `${APP_URL}/images/splash.png`,
+      splashBackgroundColor: "#facc9b",
     },
   },
 };

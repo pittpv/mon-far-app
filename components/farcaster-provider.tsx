@@ -1,7 +1,7 @@
 "use client";
 
-import { FrameContext } from "@farcaster/frame-core/dist/context";
-import sdk from "@farcaster/frame-sdk";
+import { sdk } from "@farcaster/miniapp-sdk";
+import type { Context } from "@farcaster/miniapp-core";
 import {
   createContext,
   ReactNode,
@@ -12,7 +12,7 @@ import {
 import FrameWalletProvider from "./frame-wallet-provider";
 
 interface FrameContextValue {
-  context: FrameContext | null;
+  context: Context.MiniAppContext | null;
   isSDKLoaded: boolean;
   isEthProviderAvailable: boolean;
   error: string | null;
@@ -36,7 +36,7 @@ interface FrameProviderProps {
 }
 
 export function FrameProvider({ children }: FrameProviderProps) {
-  const [context, setContext] = useState<FrameContext | null>(null);
+  const [context, setContext] = useState<Context.MiniAppContext | null>(null);
   const [actions, setActions] = useState<typeof sdk.actions | null>(null);
   const [isEthProviderAvailable, setIsEthProviderAvailable] =
     useState<boolean>(false);
@@ -44,31 +44,39 @@ export function FrameProvider({ children }: FrameProviderProps) {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    if (isSDKLoaded) return;
+
     const load = async () => {
       try {
+        // Check if SDK is available
+        if (typeof window === "undefined" || !sdk) {
+          console.warn("SDK not available (likely running outside Farcaster)");
+          setIsSDKLoaded(true); // Mark as loaded even if not in Farcaster context
+          return;
+        }
+
         const context = await sdk.context;
         if (context) {
-          setContext(context as FrameContext);
+          setContext(context);
           setActions(sdk.actions);
-          setIsEthProviderAvailable(sdk.wallet.ethProvider ? true : false);
+          setIsEthProviderAvailable(sdk.wallet?.ethProvider ? true : false);
+          setIsSDKLoaded(true);
+          console.log("✅ SDK loaded successfully");
         } else {
-          setError("Failed to load Farcaster context");
+          // Context might be null if not in Farcaster miniapp
+          console.warn("Farcaster context is null (likely running outside Farcaster)");
+          setIsSDKLoaded(true); // Mark as loaded to prevent infinite waiting
         }
         // Don't call ready() here - it should be called when UI is ready
       } catch (err) {
-        setError(
-          err instanceof Error ? err.message : "Failed to initialize SDK"
-        );
-        console.error("SDK initialization error:", err);
+        const errorMessage = err instanceof Error ? err.message : "Failed to initialize SDK";
+        setError(errorMessage);
+        console.error("❌ SDK initialization error:", err);
+        setIsSDKLoaded(true); // Mark as loaded even on error to prevent blocking
       }
     };
 
-    if (sdk && !isSDKLoaded) {
-      load().then(() => {
-        setIsSDKLoaded(true);
-        console.log("SDK loaded");
-      });
-    }
+    load();
   }, [isSDKLoaded]);
 
   return (

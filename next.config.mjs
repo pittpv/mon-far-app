@@ -20,8 +20,10 @@ const nextConfig = {
             value: 'max-age=63072000; includeSubDomains; preload'
           },
           {
-            key: 'X-Frame-Options',
-            value: 'SAMEORIGIN'
+            // Use Content-Security-Policy instead of X-Frame-Options
+            // This allows Farcaster to embed the miniapp in an iframe
+            key: 'Content-Security-Policy',
+            value: "frame-ancestors 'self' https://*.farcaster.xyz https://*.warpcast.com https://farcaster.xyz https://warpcast.com"
           },
           {
             key: 'X-Content-Type-Options',

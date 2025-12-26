@@ -1,10 +1,10 @@
 import { useFrame } from "../components/farcaster-provider";
-import { FrameContext } from "@farcaster/frame-core/dist/context";
-import sdk from "@farcaster/frame-sdk";
+import type { Context } from "@farcaster/miniapp-core";
+import { sdk } from "@farcaster/miniapp-sdk";
 
 // Define specific types for each context
 interface FarcasterContextResult {
-  context: FrameContext;
+  context: Context.MiniAppContext;
   actions: typeof sdk.actions | null;
   isEthProviderAvailable: boolean;
 }
