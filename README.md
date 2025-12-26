@@ -14,6 +14,7 @@ A lightweight miniapp for **Farcaster** that lets users vote on how they feel â€
 
 ## ðŸ†• Updates
 
+- [26.12.2025] Security update. Notification fixed.
 - [24.12.2025] Gas refunds for voting, cooldown expiration notification, updated design, added basic network, bug fixes.
 - [04.05.2025] WalletConnect
 - [06.05.2025] Modern design, increased adaptability
