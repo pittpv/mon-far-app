@@ -11,7 +11,7 @@ export async function GET() {
       signature:
         "CzsPG8zV02a5c89HfFQ0FlRL3KH2NZZZvqGRlGYtoFZyTvxA4uC7yMISaE7tUeK1rejRIcmCq/KSOQ2k3VYY9Rs=",
     },
-    frame: {
+    miniapp: {
       version: "1",
       name: "Happy World Vote",
       iconUrl: `${APP_URL}/images/icon.png`,

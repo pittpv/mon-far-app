@@ -70,15 +70,36 @@ export async function saveNotificationToken(fid: number, token: string, url: str
   // Migrate legacy data if needed
   const migratedToken = existingToken ? migrateLegacyData(existingToken) : null;
   
+  // Clean up expired votes before saving
+  const now = Math.floor(Date.now() / 1000);
+  let votesToSave = migratedToken?.votes || [];
+  
+  if (votesToSave.length > 0) {
+    const activeVotes = votesToSave.filter(vote => vote.cooldownEndTime > now);
+    const expiredCount = votesToSave.length - activeVotes.length;
+    
+    if (expiredCount > 0) {
+      console.log(`🧹 Cleaning up ${expiredCount} expired vote record(s) for FID ${fid} when saving token`);
+      votesToSave = activeVotes;
+    }
+  }
+  
   await adapter.saveNotificationToken({
     fid,
     token,
     url,
-    // Preserve existing votes array if it exists
-    votes: migratedToken?.votes,
+    // Preserve existing votes array if it exists (only active votes)
+    votes: votesToSave,
     // Legacy fields removed - all data is in votes array
   });
   console.log(`✅ Notification token saved for FID: ${fid}`);
+  
+  // Reschedule notifications for all votes that are still in cooldown
+  // This is critical for serverless environments where setTimeout is lost between invocations
+  if (votesToSave.length > 0) {
+    console.log(`🔄 Rescheduling notifications for FID ${fid} (${votesToSave.length} active votes)`);
+    rescheduleAllNotifications(fid, votesToSave);
+  }
 }
 
 export async function removeNotificationToken(fid: number) {
@@ -135,9 +156,19 @@ export async function saveUserVote(
   // Get existing votes array or create new one
   const existingVotes = migratedToken.votes || [];
   
+  // Clean up old votes with expired cooldown before processing new vote
+  // This prevents accumulation of stale records in the database
+  const now = Math.floor(Date.now() / 1000);
+  const activeVotes = existingVotes.filter(vote => vote.cooldownEndTime > now);
+  
+  if (activeVotes.length < existingVotes.length) {
+    const cleanedCount = existingVotes.length - activeVotes.length;
+    console.log(`🧹 Cleaning up ${cleanedCount} expired vote record(s) for FID ${fid}`);
+  }
+  
   // Check if vote for this address+network combination already exists
   // Same address can vote in different networks, so we need to check both
-  const existingVoteIndex = existingVotes.findIndex(
+  const existingVoteIndex = activeVotes.findIndex(
     v => v.address.toLowerCase() === address.toLowerCase() && v.network === voteNetwork
   );
   
@@ -145,12 +176,12 @@ export async function saveUserVote(
   const addressMasked = address.length > 10 ? `${address.slice(0, 6)}...${address.slice(-4)}` : '***';
   if (existingVoteIndex >= 0) {
     // Update existing vote for this address+network combination
-    updatedVotes = [...existingVotes];
+    updatedVotes = [...activeVotes];
     updatedVotes[existingVoteIndex] = newVote;
     console.log(`🔄 Updating existing vote for FID ${fid}, address ${addressMasked}, network ${voteNetwork}`);
   } else {
     // Add new vote
-    updatedVotes = [...existingVotes, newVote];
+    updatedVotes = [...activeVotes, newVote];
     console.log(`➕ Adding new vote for FID ${fid}, address ${addressMasked}, network ${voteNetwork}`);
   }
   
@@ -163,10 +194,23 @@ export async function saveUserVote(
     
     console.log(`✅ Vote saved for FID ${fid}, address ${addressMasked}, network ${voteNetwork}, voteTime ${actualVoteTime}, total votes: ${updatedVotes.length}`);
     
+    // Check if notifications are already scheduled for this FID
+    // In serverless environments, scheduledNotifications may be empty even if votes exist in DB
+    const hasScheduledNotifications = scheduledNotifications.has(fid) && scheduledNotifications.get(fid)!.size > 0;
+    
+    // Only restore notifications for active votes (cooldown not expired)
+    const activeVotesToRestore = updatedVotes.filter(v => v.cooldownEndTime > now);
+    if (!hasScheduledNotifications && activeVotesToRestore.length > 0) {
+      // Notifications were lost (e.g., server restart in serverless), restore them from DB
+      console.log(`🔄 Restoring notifications for FID ${fid} from database (serverless restart detected)`);
+      rescheduleAllNotifications(fid, activeVotesToRestore);
+    }
+    
     // Schedule notification for when cooldown ends (24 hours = 86400 seconds)
     scheduleCooldownNotification(fid, address, voteNetwork, actualVoteTime, cooldownEndTime);
     
     // Also reschedule notifications for all other address+network combinations that are still in cooldown
+    // This ensures all notifications are up to date
     rescheduleAllNotifications(fid, updatedVotes);
   } catch (error) {
     console.error(`❌ Failed to save vote for FID ${fid}:`, error);
@@ -179,6 +223,44 @@ export async function saveUserVote(
  */
 function getVoteKey(address: string, network: string): string {
   return `${address.toLowerCase()}:${network}`;
+}
+
+/**
+ * Remove a specific vote record from database
+ * Called after successful cooldown notification to prevent accumulation of old records
+ */
+async function removeVoteRecord(fid: number, address: string, network: string): Promise<void> {
+  try {
+    const adapter = getAdapter();
+    const tokenData = await adapter.getNotificationToken(fid);
+    
+    if (!tokenData) {
+      return; // Token doesn't exist, nothing to clean
+    }
+    
+    const migratedToken = migrateLegacyData(tokenData);
+    const existingVotes = migratedToken.votes || [];
+    
+    // Remove vote record for this specific address+network combination
+    const filteredVotes = existingVotes.filter(
+      v => !(v.address.toLowerCase() === address.toLowerCase() && v.network === network)
+    );
+    
+    // Only update if something was removed
+    if (filteredVotes.length < existingVotes.length) {
+      await adapter.saveNotificationToken({
+        ...migratedToken,
+        votes: filteredVotes,
+      });
+      
+      const addressMasked = address.length > 10 ? `${address.slice(0, 6)}...${address.slice(-4)}` : '***';
+      console.log(`🗑️ Removed vote record for FID ${fid}, address ${addressMasked}, network ${network} after notification`);
+    }
+  } catch (error) {
+    // Log error but don't throw - cleanup failure shouldn't break notification flow
+    const addressMasked = address.length > 10 ? `${address.slice(0, 6)}...${address.slice(-4)}` : '***';
+    console.error(`❌ Error removing vote record for FID ${fid}, address ${addressMasked}, network ${network}:`, error);
+  }
 }
 
 /**
@@ -214,7 +296,10 @@ function scheduleCooldownNotification(
   if (timeUntilNotification <= 0) {
     // Cooldown already ended, send notification immediately
     console.log(`⏰ Cooldown already ended for FID ${fid}, address ${addressMasked}, network ${network}, sending notification immediately`);
-    sendCooldownNotification(fid, address, network, cooldownEndTime);
+    // Use void to fire and forget, but handle errors in the function itself
+    void sendCooldownNotification(fid, address, network, cooldownEndTime).catch(error => {
+      console.error(`❌ Error sending immediate cooldown notification to FID ${fid}:`, error);
+    });
     return;
   }
 
@@ -256,7 +341,10 @@ function rescheduleAllNotifications(fid: number, votes: VoteRecord[]) {
       // Cooldown already ended, send notification immediately
       const addressMasked = vote.address.length > 10 ? `${vote.address.slice(0, 6)}...${vote.address.slice(-4)}` : '***';
       console.log(`⏰ Cooldown already ended for FID ${fid}, address ${addressMasked}, network ${vote.network || 'unknown'}, sending notification immediately`);
-      sendCooldownNotification(fid, vote.address, vote.network || 'unknown', vote.cooldownEndTime);
+      // Use void to fire and forget, but handle errors in the function itself
+      void sendCooldownNotification(fid, vote.address, vote.network || 'unknown', vote.cooldownEndTime).catch(error => {
+        console.error(`❌ Error sending immediate cooldown notification to FID ${fid}:`, error);
+      });
     }
   }
 }
@@ -317,9 +405,9 @@ async function sendCooldownNotification(
     if (result.state === 'success') {
       console.log(`✅ Cooldown notification sent to FID ${fid} for address ${formattedAddress} on ${formattedNetwork}`);
       
-      // Optionally remove the vote record after notification is sent
-      // Or keep it for history - depends on requirements
-      // For now, we keep it but could add cleanup logic here
+      // Remove the vote record from database after successful notification
+      // This prevents accumulation of old records and duplicate notifications
+      await removeVoteRecord(fid, address, network);
     } else if (result.state === 'no_token') {
       console.log(`⚠️ No valid token for FID ${fid} (token was invalid and removed)`);
     } else if (result.state === 'rate_limit') {
@@ -337,5 +425,60 @@ async function sendCooldownNotification(
 
 export async function getAllTokens(): Promise<NotificationToken[]> {
   return await getAdapter().getAllTokens();
+}
+
+/**
+ * Restore all notifications from database
+ * This is useful for serverless environments where setTimeout is lost between invocations
+ * Call this function periodically or when needed to ensure notifications are scheduled
+ */
+export async function restoreAllNotifications(): Promise<{ restored: number; errors: number; cleaned: number }> {
+  const adapter = getAdapter();
+  const allTokens = await adapter.getAllTokens();
+  
+  let restored = 0;
+  let errors = 0;
+  let cleaned = 0;
+  const now = Math.floor(Date.now() / 1000);
+  
+  for (const token of allTokens) {
+    try {
+      const migratedToken = migrateLegacyData(token);
+      
+      if (migratedToken.votes && migratedToken.votes.length > 0) {
+        // Filter out expired votes to prevent duplicate notifications
+        const activeVotes = migratedToken.votes.filter(vote => vote.cooldownEndTime > now);
+        const expiredCount = migratedToken.votes.length - activeVotes.length;
+        
+        // Clean up expired votes from database
+        if (expiredCount > 0) {
+          await adapter.saveNotificationToken({
+            ...migratedToken,
+            votes: activeVotes,
+          });
+          cleaned += expiredCount;
+          console.log(`🧹 Cleaned up ${expiredCount} expired vote record(s) for FID ${token.fid}`);
+        }
+        
+        // Only restore notifications for active votes
+        if (activeVotes.length > 0) {
+          // Check if notifications are already scheduled
+          const hasScheduledNotifications = scheduledNotifications.has(token.fid) && scheduledNotifications.get(token.fid)!.size > 0;
+          
+          if (!hasScheduledNotifications) {
+            console.log(`🔄 Restoring notifications for FID ${token.fid} (${activeVotes.length} active votes)`);
+            rescheduleAllNotifications(token.fid, activeVotes);
+            restored++;
+          }
+        }
+      }
+    } catch (error) {
+      console.error(`❌ Error restoring notifications for FID ${token.fid}:`, error);
+      errors++;
+    }
+  }
+  
+  console.log(`✅ Restored notifications: ${restored} FIDs, cleaned: ${cleaned} expired records, errors: ${errors}`);
+  return { restored, errors, cleaned };
 }
 

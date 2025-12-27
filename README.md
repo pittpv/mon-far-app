@@ -14,7 +14,11 @@ A lightweight miniapp for **Farcaster** that lets users vote on how they feel �
 
 ## 🆕 Updates
 
-- [26.12.2025] Security update. Notification fixed.
+- [26.12.2025] Security update. Notification system improvements:
+  - ✅ Fixed: Notifications now automatically restore after Vercel redeploy
+  - ✅ Fixed: Automatic cleanup of expired vote records
+  - ✅ Fixed: No duplicate notifications
+  - ✅ Improved: Serverless environment support
 - [24.12.2025] Gas refunds for voting, cooldown expiration notification, updated design, added basic network, bug fixes.
 - [04.05.2025] WalletConnect
 - [06.05.2025] Modern design, increased adaptability

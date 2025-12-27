@@ -8,8 +8,19 @@ import "./globals.css";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "MiniApp for Monad Farcaster",
-  description: "Happy World App - just vote",
+  title: "Happy World Vote",
+  description: "Vote on how happy you feel and contribute to making the world a better place through blockchain voting on Monad and Base networks",
+  openGraph: {
+    title: "Happy World Vote",
+    description: "Vote on how happy you feel and contribute to making the world a better place through blockchain voting on Monad and Base networks",
+    siteName: "Happy World Vote",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Happy World Vote",
+    description: "Vote on how happy you feel and contribute to making the world a better place through blockchain voting on Monad and Base networks",
+  },
 };
 
 export default function RootLayout({

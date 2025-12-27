@@ -15,9 +15,12 @@ export function FarcasterActions() {
       }
 
       try {
-        const response = await fetch(`/api/webhook?fid=${fid}`);
+        const response = await fetch(`/api/check-miniapp-status?fid=${fid}`);
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
         const data = await response.json();
-        setIsMiniAppAdded(data.hasToken || false);
+        setIsMiniAppAdded(data.hasToken === true);
       } catch (error) {
         console.error("Error checking MiniApp status:", error);
         setIsMiniAppAdded(null);
@@ -27,13 +30,34 @@ export function FarcasterActions() {
     checkMiniAppStatus();
   }, [fid]);
 
+  const handleAddMiniApp = async () => {
+    if (actions) {
+      actions.addFrame();
+      // Refresh status after a short delay to check if MiniApp was added
+      setTimeout(async () => {
+        if (fid) {
+          try {
+            const response = await fetch(`/api/check-miniapp-status?fid=${fid}`);
+            if (!response.ok) {
+              throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            const data = await response.json();
+            setIsMiniAppAdded(data.hasToken === true);
+          } catch (error) {
+            console.error("Error checking MiniApp status after add:", error);
+          }
+        }
+      }, 2000);
+    }
+  };
+
   return (
     <div className="rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-6 shadow-md w-full transition-colors duration-300">
       <h2 className="text-2xl font-semibold text-gray-800 dark:text-white mb-4">Farcaster Actions</h2>
       {actions ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {isMiniAppAdded !== true && (
-            <ActionButton onClick={() => actions.addFrame()}>
+          {isMiniAppAdded === false && (
+            <ActionButton onClick={handleAddMiniApp}>
               ➕ Add MiniApp
             </ActionButton>
           )}
